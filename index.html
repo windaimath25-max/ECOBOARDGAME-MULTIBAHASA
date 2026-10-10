@@ -1,0 +1,1391 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Eco Board Game - Monopoli Edukasi 3D Multibahasa</title>
+<style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, sans-serif; }
+    body { background: #0a1a2e; height: 100vh; overflow: hidden; display: flex; }
+
+    /* ============================================================
+       PANEL KIRI (1/4 LAYAR)
+       ============================================================ */
+    .control-panel {
+        width: 25%;
+        background: linear-gradient(135deg, #1e3c72 0%, #2a5298 30%, #3a6fb8 50%, #2a5298 70%, #1e3c72 100%);
+        background-size: 200% 200%;
+        animation: metallicShift 8s ease infinite;
+        display: flex; flex-direction: column; align-items: center; justify-content: flex-start;
+        padding: 15px;
+        box-shadow: inset 0 0 60px rgba(0,0,0,0.4), inset 2px 0 8px rgba(255,255,255,0.1), 4px 0 15px rgba(0,0,0,0.5);
+        z-index: 10; overflow-y: auto;
+        border-right: 2px solid #5a8fc7;
+    }
+    @keyframes metallicShift {
+        0%   { background-position: 0% 50%; }
+        50%  { background-position: 100% 50%; }
+        100% { background-position: 0% 50%; }
+    }
+    .control-panel h1 {
+        font-size: 20px; color: #ffffff; text-align: center; margin-bottom: 5px;
+        text-shadow: 2px 2px 6px rgba(0,0,0,0.9), 0 0 10px rgba(120,180,255,0.5);
+        letter-spacing: 1px;
+    }
+    .control-panel h1 small {
+        display: block; font-size: 11px; color: #d0e2ff;
+        font-weight: normal; text-shadow: 1px 1px 3px rgba(0,0,0,0.6);
+        margin-top: 3px;
+    }
+
+    /* DADU 3D */
+    .dice-container { perspective: 1200px; width: 100px; height: 100px; margin: 25px 0 20px 0; }
+    .dice { width: 100%; height: 100%; position: relative; transform-style: preserve-3d; transition: transform 1.5s cubic-bezier(0.25, 0.1, 0.25, 1); }
+    .face {
+        position: absolute; width: 100px; height: 100px;
+        background: linear-gradient(145deg, #ffffff 0%, #f0f0f0 100%);
+        border-radius: 22px; border: 2px solid #e8e8e8;
+        display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(3, 1fr);
+        padding: 10px; gap: 2px;
+        box-shadow: inset 0 3px 6px rgba(255, 255, 255, 0.9), inset 0 -3px 6px rgba(0, 0, 0, 0.08), 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+    .front  { transform: translateZ(50px); }
+    .back   { transform: rotateY(180deg) translateZ(50px); }
+    .right  { transform: rotateY(90deg) translateZ(50px); }
+    .left   { transform: rotateY(-90deg) translateZ(50px); }
+    .top    { transform: rotateX(90deg) translateZ(50px); }
+    .bottom { transform: rotateX(-90deg) translateZ(50px); }
+    .dot {
+        background: radial-gradient(circle at 35% 35%, #5a5a5a, #1a1a1a 70%);
+        border-radius: 50%; width: 16px; height: 16px;
+        box-shadow: inset -1px -1px 2px rgba(255,255,255,0.4), inset 1px 1px 2px rgba(0,0,0,0.4);
+        align-self: center; justify-self: center; visibility: hidden;
+    }
+    .dot.visible { visibility: visible; }
+
+    /* TOMBOL ORANGE METALIK */
+    .btn { width: 90%; padding: 12px; font-size: 14px; font-weight: bold; border: none; border-radius: 10px; cursor: pointer; transition: 0.1s; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.5px; color: #ffffff; text-shadow: 1px 1px 3px rgba(0,0,0,0.7); }
+
+    .btn-roll {
+        background: linear-gradient(145deg, #ffb347 0%, #ff8c00 25%, #e67e22 50%, #d35400 75%, #a04000 100%);
+        background-size: 200% 200%;
+        animation: orangeMetalShift 3s ease infinite;
+        box-shadow: 0 6px #8b3a00, 0 8px 15px rgba(0,0,0,0.5), inset 0 2px 4px rgba(255, 255, 200, 0.5), inset 0 -3px 6px rgba(0,0,0,0.3);
+        border: 1px solid #b8651a;
+        font-size: 15px;
+    }
+    @keyframes orangeMetalShift {
+        0%   { background-position: 0% 50%; }
+        50%  { background-position: 100% 50%; }
+        100% { background-position: 0% 50%; }
+    }
+    .btn-roll:hover:not(:disabled) {
+        background: linear-gradient(145deg, #ffc966 0%, #ffa020 25%, #f39c12 50%, #e67e22 75%, #b8651a 100%);
+        background-size: 200% 200%;
+        transform: translateY(-2px);
+        box-shadow: 0 8px #8b3a00, 0 10px 20px rgba(0,0,0,0.55), inset 0 2px 4px rgba(255,255,200,0.6), inset 0 -3px 6px rgba(0,0,0,0.3);
+    }
+    .btn-roll:active:not(:disabled) {
+        transform: translateY(4px);
+        box-shadow: 0 2px #8b3a00, 0 4px 8px rgba(0,0,0,0.4), inset 0 2px 4px rgba(255,255,200,0.4), inset 0 -3px 6px rgba(0,0,0,0.3);
+    }
+    .btn-roll:disabled {
+        background: linear-gradient(145deg, #b8a89a, #8b7a6a);
+        box-shadow: 0 6px #5a4a3a, inset 0 1px 0 rgba(255,255,255,0.15), inset 0 -2px 4px rgba(0,0,0,0.3);
+        cursor: not-allowed;
+        color: #e0d8d0;
+        animation: none;
+    }
+
+    .btn-start { background: linear-gradient(145deg, #2ecc71, #1e8449); box-shadow: 0 6px #145a32, 0 8px 15px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.3), inset 0 -2px 4px rgba(0,0,0,0.3); }
+    .btn-start:hover:not(:disabled) { background: linear-gradient(145deg, #3adc81, #27ae60); transform: translateY(-2px); }
+    .btn-start:active:not(:disabled) { transform: translateY(4px); box-shadow: 0 2px #145a32; }
+    .btn-start:disabled { background: linear-gradient(145deg, #6b7b8f, #4a5a70); box-shadow: 0 6px #2a3a50; cursor: not-allowed; color: #c0c8d0; }
+
+    .setup-box {
+        width: 90%; background: linear-gradient(145deg, #1a3a6a, #0f2540);
+        border: 1px solid rgba(120, 180, 255, 0.3); border-radius: 10px;
+        padding: 10px; margin-bottom: 10px;
+        box-shadow: inset 0 3px 8px rgba(0,0,0,0.5), inset 0 -1px 2px rgba(255,255,255,0.05), 0 4px 8px rgba(0,0,0,0.3);
+    }
+    .setup-box label { display: block; font-size: 12px; color: #ffffff; margin-bottom: 5px; font-weight: 600; text-shadow: 1px 1px 2px rgba(0,0,0,0.6); }
+    .setup-box select { width: 100%; padding: 8px; border: 1px solid #5a8fc7; border-radius: 6px; font-size: 14px; background: #ffffff; color: #1e3c72; cursor: pointer; font-weight: bold; }
+
+    .status-box { width: 90%; background: linear-gradient(145deg, #1a3a6a, #0f2540); border: 1px solid rgba(120, 180, 255, 0.3); border-radius: 10px; padding: 10px; margin-top: 5px; text-align: center; box-shadow: inset 0 3px 8px rgba(0,0,0,0.5), inset 0 -1px 2px rgba(255,255,255,0.05), 0 4px 8px rgba(0,0,0,0.3); }
+    #turnIndicator { font-size: 14px; font-weight: bold; margin-bottom: 5px; color: #ffffff; text-shadow: 1px 1px 3px rgba(0,0,0,0.7); }
+    #diceResult { font-size: 12px; color: #d0e2ff; text-shadow: 1px 1px 2px rgba(0,0,0,0.5); }
+
+    .scoreboard { width: 90%; background: linear-gradient(145deg, #1a3a6a, #0f2540); border: 1px solid rgba(120, 180, 255, 0.3); border-radius: 10px; padding: 10px; margin-top: 10px; box-shadow: inset 0 3px 8px rgba(0,0,0,0.5), inset 0 -1px 2px rgba(255,255,255,0.05), 0 4px 8px rgba(0,0,0,0.3); }
+    .scoreboard h3 { font-size: 13px; color: #ffffff; margin-bottom: 8px; text-align: center; text-shadow: 1px 1px 3px rgba(0,0,0,0.7); letter-spacing: 1px; }
+    .scoreboard .player-score { display: flex; justify-content: space-between; font-size: 12px; padding: 4px 0; border-bottom: 1px dashed rgba(200, 220, 255, 0.2); color: #ffffff; text-shadow: 1px 1px 2px rgba(0,0,0,0.6); }
+    .scoreboard .player-score:last-child { border-bottom: none; }
+
+    /* PANEL KANAN */
+    .board-panel { width: 75%; position: relative; overflow: hidden; display: flex; justify-content: center; align-items: center; background: #d4edda; perspective: 1500px; }
+    .board-bg-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-image: url('https://i.ibb.co.com/B2Ldn6bT/NEW-BACKGROUND-ECO-SPENSASED.png'); background-size: cover; background-position: center; background-repeat: no-repeat; z-index: 1; }
+    .board-overlay-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(255, 255, 255, 0.7); z-index: 2; }
+
+    .board {
+        position: relative; width: 92%; height: 92%; max-width: 900px; max-height: 900px;
+        display: grid; grid-template-columns: 1fr 1fr 1fr 1fr 1fr 1fr 1fr; grid-template-rows: 1fr 1fr 1fr 1fr 1fr 1fr 1fr;
+        gap: 6px; padding: 14px;
+        background: linear-gradient(135deg, #f0f9f0 0%, #d4edda 100%);
+        border-radius: 24px;
+        box-shadow: 0 30px 60px rgba(0,0,0,0.5), 0 15px 25px rgba(0,0,0,0.4), 0 0 0 6px #27ae60, 0 0 0 10px #1e8449, inset 0 4px 8px rgba(255,255,255,0.5), inset 0 -6px 12px rgba(0,0,0,0.15);
+        z-index: 3; transform-style: preserve-3d; transform: rotateX(2deg);
+        animation: boardFloat 6s ease-in-out infinite;
+    }
+    @keyframes boardFloat {
+        0%, 100% { transform: rotateX(2deg) translateY(0); }
+        50%      { transform: rotateX(2deg) translateY(-6px); }
+    }
+
+    .cell {
+        position: relative;
+        background: linear-gradient(145deg, #ffffff 0%, #e8f5e9 100%);
+        border: 2px solid #27ae60; border-radius: 10px;
+        display: flex; flex-direction: column; align-items: center; justify-content: center;
+        padding: 4px;
+        box-shadow: inset 0 3px 6px rgba(255,255,255,0.9), inset 0 -3px 6px rgba(0,0,0,0.1), 0 4px 8px rgba(0,0,0,0.2), 0 6px 0 #1e8449;
+        overflow: hidden; transition: transform 0.2s, box-shadow 0.2s;
+        background-size: cover; background-position: center; background-repeat: no-repeat;
+    }
+    .cell::before {
+        content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+        background: linear-gradient(180deg, rgba(255,255,255,0.25) 0%, rgba(255,255,255,0.55) 100%);
+        z-index: 1; pointer-events: none;
+    }
+    .cell:hover {
+        transform: translateY(-3px) scale(1.05);
+        box-shadow: 0 0 0 3px #ffd700, 0 8px 15px rgba(0,0,0,0.35), 0 10px 0 #b8860b;
+        z-index: 20;
+    }
+
+    .cell-number {
+        position: absolute; top: 3px; left: 5px;
+        font-size: 11px; font-weight: bold; color: #ffffff;
+        background: linear-gradient(145deg, #27ae60, #1e8449);
+        padding: 2px 6px; border-radius: 6px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.3);
+        z-index: 3; text-shadow: 1px 1px 1px rgba(0,0,0,0.5);
+    }
+
+    .cell-icon {
+        font-size: 32px;
+        margin-bottom: 4px;
+        filter:
+            drop-shadow(0 3px 4px rgba(0,0,0,0.5))
+            drop-shadow(0 0 8px rgba(255,255,255,0.9))
+            saturate(1.6)
+            brightness(1.15);
+        z-index: 2; position: relative;
+        line-height: 1;
+    }
+
+    .cell-label {
+        font-size: 9px;
+        font-weight: bold;
+        color: #0f3d1e;
+        text-align: center;
+        line-height: 1.15;
+        text-transform: uppercase;
+        letter-spacing: 0.2px;
+        text-shadow:
+            1px 1px 0 rgba(255,255,255,1),
+            -1px -1px 0 rgba(255,255,255,1),
+            0 0 6px rgba(255,255,255,1),
+            0 1px 3px rgba(0,0,0,0.25);
+        z-index: 2;
+        position: relative;
+        background: linear-gradient(180deg, rgba(255,255,255,0.85), rgba(255,255,255,0.7));
+        padding: 2px 5px;
+        border-radius: 5px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+    }
+
+    .cell.cell-start { border-color: #d35400; box-shadow: inset 0 3px 6px rgba(255,255,255,0.5), 0 6px 0 #b85c00; }
+    .cell.cell-start .cell-label { color: #a04000; font-weight: bold; font-size: 10px; }
+    .cell.cell-start .cell-number { background: linear-gradient(145deg, #d35400, #a04000); }
+    .cell.cell-finish { border-color: #8e44ad; box-shadow: inset 0 3px 6px rgba(255,255,255,0.5), 0 6px 0 #6c3483; }
+    .cell.cell-finish .cell-label { color: #6c3483; font-weight: bold; }
+    .cell.cell-finish .cell-number { background: linear-gradient(145deg, #8e44ad, #6c3483); }
+    .cell.cell-mudah { border-color: #27ae60; box-shadow: inset 0 3px 6px rgba(255,255,255,0.5), 0 6px 0 #1e8449; }
+    .cell.cell-sedang { border-color: #f39c12; box-shadow: inset 0 3px 6px rgba(255,255,255,0.5), 0 6px 0 #b87c0e; }
+    .cell.cell-sulit { border-color: #e74c3c; box-shadow: inset 0 3px 6px rgba(255,255,255,0.5), 0 6px 0 #a93226; }
+
+    /* ============================================================
+       KANVAS TENGAH — LOGO SUDAH TUMPUL/MELENGKUNG
+       ============================================================ */
+    .center-area {
+        grid-column: 2 / 7; grid-row: 2 / 7;
+        position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center;
+        text-align: center; padding: 15px; border-radius: 20px; overflow: hidden;
+        background: rgba(255, 255, 255, 0.35);
+        backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px);
+        border: 3px dashed rgba(39, 174, 96, 0.6);
+        box-shadow: inset 0 6px 15px rgba(39, 174, 96, 0.1), 0 0 0 5px rgba(39, 174, 96, 0.5), 0 0 0 8px rgba(30, 132, 73, 0.4);
+        transform-style: preserve-3d;
+    }
+    .center-area::before {
+        content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+        background-image: url('https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=1200');
+        background-size: cover; background-position: center; opacity: 0.4; z-index: 0;
+    }
+
+    /* 🎨 LOGO DENGAN SUDUT TUMPUL/MELENGKUNG */
+    .center-area .logo-img {
+        max-width: 55%; max-height: 55%; object-fit: contain;
+        margin-bottom: 10px;
+        /* ✨ SUDUT TUMPUL */
+        border-radius: 24px;
+        padding: 6px;
+        background: rgba(255, 255, 255, 0.7);
+        border: 2px solid rgba(39, 174, 96, 0.5);
+        box-shadow:
+            0 8px 20px rgba(0,0,0,0.35),
+            inset 0 0 10px rgba(255,255,255,0.9),
+            0 0 0 4px rgba(255,255,255,0.3);
+        z-index: 2; position: relative;
+        animation: logoFloat 4s ease-in-out infinite;
+    }
+    @keyframes logoFloat {
+        0%, 100% { transform: translateZ(20px) scale(1) rotateY(0deg); }
+        50%      { transform: translateZ(30px) scale(1.03) rotateY(5deg); }
+    }
+    .center-area h2 { font-size: 22px; color: #1e6f3e; letter-spacing: 2px; margin-bottom: 3px; text-shadow: 2px 2px 0 rgba(255,255,255,0.95), 0 4px 8px rgba(0,0,0,0.2); z-index: 2; position: relative; }
+    .center-area .tagline { font-size: 10px; color: #2c3e50; font-style: italic; max-width: 400px; line-height: 1.4; text-shadow: 1px 1px 2px rgba(255,255,255,0.95); z-index: 2; position: relative; }
+
+    .token {
+        position: absolute; width: 34px; height: 34px; border-radius: 50%;
+        border: 3px solid #ffffff;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.6), 0 6px 12px rgba(0,0,0,0.4), 0 0 0 2px rgba(0,0,0,0.3), inset 0 -3px 6px rgba(0,0,0,0.3), inset 0 3px 6px rgba(255,255,255,0.4);
+        display: flex; justify-content: center; align-items: center;
+        font-size: 18px; color: #ffffff; font-weight: bold;
+        text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
+        z-index: 100; transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+        pointer-events: none; top: 50%; left: 50%;
+        transform: translate(-50%, -50%) translateZ(30px);
+    }
+    .token.active {
+        box-shadow: 0 0 0 4px #ffd700, 0 6px 20px rgba(255,215,0,0.7), inset 0 -3px 6px rgba(0,0,0,0.3);
+        animation: tokenPulse 1s ease-in-out infinite;
+        z-index: 200;
+    }
+    @keyframes tokenPulse {
+        0%, 100% { transform: translate(-50%, -50%) translateZ(30px) scale(1); }
+        50%      { transform: translate(-50%, -50%) translateZ(40px) scale(1.2); }
+    }
+
+    .question-modal {
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(0,0,0,0.8); display: none; justify-content: center; align-items: center;
+        z-index: 2000; backdrop-filter: blur(5px);
+    }
+    .question-modal.show { display: flex; }
+    .question-box {
+        background: linear-gradient(145deg, #ffffff, #f0f9f0);
+        border-radius: 24px; padding: 30px 35px; max-width: 750px; width: 92%;
+        box-shadow: 0 30px 60px rgba(0,0,0,0.6), 0 0 0 6px #27ae60, 0 0 0 10px #1e8449;
+        animation: popIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+        text-align: center; max-height: 90vh; overflow-y: auto;
+    }
+    @keyframes popIn {
+        0% { transform: scale(0.5); opacity: 0; }
+        100% { transform: scale(1); opacity: 1; }
+    }
+
+    .question-category {
+        display: inline-block; padding: 5px 14px; border-radius: 16px;
+        font-size: 11px; font-weight: bold; color: #ffffff;
+        margin-bottom: 8px; margin-right: 6px;
+        text-transform: uppercase; letter-spacing: 1px;
+        box-shadow: 0 3px 6px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.3);
+    }
+    .question-category.literasi { background: linear-gradient(145deg, #3498db, #2980b9); }
+    .question-category.numerasi { background: linear-gradient(145deg, #9b59b6, #8e44ad); }
+    .question-category.bernalar { background: linear-gradient(145deg, #e67e22, #d35400); }
+
+    .question-level {
+        display: inline-block; padding: 5px 14px; border-radius: 16px;
+        font-size: 11px; font-weight: bold; color: #ffffff;
+        margin-bottom: 12px;
+        text-transform: uppercase; letter-spacing: 1px;
+        box-shadow: 0 3px 6px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.3);
+    }
+    .question-level.mudah { background: linear-gradient(145deg, #2ecc71, #27ae60); }
+    .question-level.sedang { background: linear-gradient(145deg, #f39c12, #e67e22); }
+    .question-level.sulit { background: linear-gradient(145deg, #e74c3c, #c0392b); }
+
+    .question-player { font-size: 13px; color: #555; margin-bottom: 8px; }
+    .question-pos { font-size: 12px; color: #999; margin-bottom: 12px; }
+    .question-text {
+        font-size: 16px; color: #1e3c72; font-weight: bold;
+        margin-bottom: 20px; line-height: 1.55;
+        text-align: left;
+        padding: 12px 15px;
+        background: rgba(240, 249, 240, 0.6);
+        border-left: 5px solid #27ae60;
+        border-radius: 8px;
+    }
+
+    .answers { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
+    .answer-btn {
+        padding: 12px 15px; font-size: 14px; font-weight: bold;
+        border: 3px solid #27ae60;
+        background: linear-gradient(145deg, #ffffff, #e8f5e9);
+        color: #1e3c72; border-radius: 12px; cursor: pointer;
+        text-align: left;
+        box-shadow: 0 5px #1e8449, 0 8px 12px rgba(0,0,0,0.15), inset 0 2px 4px rgba(255,255,255,0.9);
+        transition: all 0.15s;
+    }
+    .answer-btn:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 7px #1e8449, 0 10px 18px rgba(0,0,0,0.2); }
+    .answer-btn:active:not(:disabled) { transform: translateY(3px); box-shadow: 0 2px #1e8449; }
+    .answer-btn:disabled { cursor: not-allowed; opacity: 0.7; }
+    .answer-btn.correct { background: linear-gradient(145deg, #2ecc71, #27ae60) !important; color: #ffffff !important; box-shadow: 0 5px #145a32 !important; }
+    .answer-btn.wrong { background: linear-gradient(145deg, #e74c3c, #c0392b) !important; color: #ffffff !important; box-shadow: 0 5px #7b241c !important; }
+
+    .question-feedback { font-size: 15px; font-weight: bold; min-height: 22px; margin-top: 10px; }
+    .question-feedback.correct { color: #27ae60; }
+    .question-feedback.wrong { color: #e74c3c; }
+    .question-explanation {
+        font-size: 12px; color: #555; font-style: italic;
+        margin-top: 8px; padding: 8px 12px;
+        background: rgba(241, 196, 15, 0.15);
+        border-radius: 8px; border-left: 3px solid #f39c12;
+        text-align: left; line-height: 1.5;
+    }
+
+    .reset-btn {
+        position: fixed; bottom: 20px; right: 20px;
+        width: 60px; height: 60px; border-radius: 50%;
+        background: linear-gradient(145deg, #e74c3c, #c0392b);
+        color: white; border: 3px solid rgba(255,255,255,0.9);
+        font-size: 28px; cursor: pointer;
+        box-shadow: 0 6px #7b241c, 0 10px 25px rgba(231, 76, 60, 0.6), inset 0 2px 4px rgba(255,255,255,0.3);
+        transition: all 0.2s ease;
+        display: none; align-items: center; justify-content: center;
+        z-index: 500;
+    }
+    .reset-btn:hover { transform: scale(1.1) rotate(180deg); }
+    .reset-btn:active { transform: scale(0.95) translateY(4px); box-shadow: 0 2px #7b241c; }
+    .reset-btn.show { display: flex; }
+
+    .notification {
+        position: fixed; top: 20px; left: 50%; transform: translateX(-50%) translateY(-100px);
+        background: linear-gradient(145deg, #2ecc71, #27ae60); color: white;
+        padding: 15px 30px; border-radius: 12px; font-size: 16px; font-weight: bold;
+        box-shadow: 0 8px #145a32, 0 12px 25px rgba(0,0,0,0.4), inset 0 2px 4px rgba(255,255,255,0.3);
+        transition: transform 0.4s ease; z-index: 999; text-align: center; max-width: 80%;
+    }
+    .notification.show { transform: translateX(-50%) translateY(0); }
+
+    .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.75); display: none; justify-content: center; align-items: center; z-index: 1000; }
+    .modal-overlay.show { display: flex; }
+    .modal-content { background: white; padding: 35px 45px; border-radius: 20px; text-align: center; box-shadow: 0 15px 50px rgba(0,0,0,0.5), 0 0 0 5px #27ae60; animation: popIn 0.4s ease; max-width: 90%; }
+    .modal-content h2 { color: #27ae60; font-size: 28px; margin-bottom: 15px; }
+    .modal-content p { color: #333; margin-bottom: 22px; font-size: 16px; }
+    .modal-content button { padding: 12px 28px; background: linear-gradient(145deg, #2ecc71, #27ae60); color: white; border: none; border-radius: 10px; font-size: 15px; font-weight: bold; cursor: pointer; box-shadow: 0 5px #145a32; margin: 5px; }
+    .modal-content button:active { transform: translateY(4px); box-shadow: 0 1px #145a32; }
+    .modal-content button.btn-secondary { background: linear-gradient(145deg, #95a5a6, #7f8c8d); box-shadow: 0 5px #566573; }
+    .modal-content button.btn-danger { background: linear-gradient(145deg, #e74c3c, #c0392b); box-shadow: 0 5px #7b241c; }
+
+    /* LANGUAGE SELECTOR */
+    .language-selector {
+        position: fixed; top: 15px; right: 15px; z-index: 3000;
+        background: rgba(30, 60, 114, 0.95);
+        border: 2px solid #5a8fc7; border-radius: 12px;
+        padding: 6px 10px;
+        box-shadow: 0 6px 20px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.2);
+        backdrop-filter: blur(8px);
+        display: flex; align-items: center; gap: 8px;
+        transition: all 0.3s ease;
+    }
+    .language-selector:hover {
+        background: rgba(30, 60, 114, 1);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.7), inset 0 1px 0 rgba(255,255,255,0.2);
+    }
+    .language-selector label {
+        font-size: 14px; color: #d0e2ff; font-weight: bold;
+        text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+        white-space: nowrap;
+    }
+    .language-selector select {
+        padding: 6px 10px; border-radius: 8px; border: 2px solid #5a8fc7;
+        background: #ffffff; color: #1e3c72; font-weight: bold; font-size: 13px;
+        cursor: pointer; outline: none;
+        box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
+        transition: border-color 0.2s;
+    }
+    .language-selector select:hover { border-color: #ffb347; }
+
+    @media (max-width: 1024px) {
+        .cell-icon { font-size: 24px; }
+        .cell-label { font-size: 7px; padding: 1px 3px; }
+        .cell-number { font-size: 9px; padding: 1px 4px; }
+        .token { width: 26px; height: 26px; font-size: 14px; }
+        .center-area h2 { font-size: 16px; }
+        .question-text { font-size: 14px; }
+        .answer-btn { font-size: 12px; padding: 10px 12px; }
+    }
+
+    @media (max-width: 768px) {
+        .control-panel { padding: 8px; }
+        .control-panel h1 { font-size: 14px; }
+        .btn { font-size: 11px; padding: 8px; }
+        .dice-container { width: 70px; height: 70px; }
+        .face { width: 70px; height: 70px; border-radius: 16px; padding: 6px; }
+        .dot { width: 11px; height: 11px; }
+        .front  { transform: translateZ(35px); }
+        .back   { transform: rotateY(180deg) translateZ(35px); }
+        .right  { transform: rotateY(90deg) translateZ(35px); }
+        .left   { transform: rotateY(-90deg) translateZ(35px); }
+        .top    { transform: rotateX(90deg) translateZ(35px); }
+        .bottom { transform: rotateX(-90deg) translateZ(35px); }
+        .token { width: 22px; height: 22px; font-size: 11px; }
+        .reset-btn { width: 50px; height: 50px; font-size: 22px; }
+        .cell-icon { font-size: 18px; }
+        .cell-label { font-size: 6px; }
+        .answers { grid-template-columns: 1fr; }
+        .question-box { padding: 20px; }
+        .language-selector { top: 8px; right: 8px; padding: 4px 6px; }
+        .language-selector label { font-size: 11px; }
+        .language-selector select { font-size: 11px; padding: 4px 6px; }
+    }
+</style>
+</head>
+<body>
+
+<!-- LANGUAGE SELECTOR -->
+<div class="language-selector">
+    <label for="languageSelect">🌐</label>
+    <select id="languageSelect" onchange="changeLanguage(this.value)">
+        <option value="id" selected>🇮🇩 Indonesia</option>
+        <option value="en">🇬🇧 English</option>
+        <option value="zh">🇨🇳 中文</option>
+        <option value="ko">🇰🇷 한국어</option>
+        <option value="ja">🇯🇵 日本語</option>
+        <option value="ar">🇸🇦 العربية</option>
+    </select>
+</div>
+
+<!-- PANEL KIRI -->
+<div class="control-panel">
+    <h1>ECO BOARD GAME
+        <small data-i18n="subtitle">SMPN 1 Sedati - Sidoarjo</small>
+    </h1>
+
+    <div class="dice-container">
+        <div class="dice" id="dice">
+            <div class="face front" data-face="1"><div></div><div></div><div></div><div></div><div class="dot visible"></div><div></div><div></div><div></div><div></div></div>
+            <div class="face back" data-face="6"><div class="dot visible"></div><div></div><div class="dot visible"></div><div class="dot visible"></div><div></div><div class="dot visible"></div><div class="dot visible"></div><div></div><div class="dot visible"></div></div>
+            <div class="face right" data-face="3"><div class="dot visible"></div><div></div><div></div><div></div><div class="dot visible"></div><div></div><div></div><div></div><div class="dot visible"></div></div>
+            <div class="face left" data-face="4"><div class="dot visible"></div><div></div><div class="dot visible"></div><div></div><div></div><div></div><div class="dot visible"></div><div></div><div class="dot visible"></div></div>
+            <div class="face top" data-face="5"><div class="dot visible"></div><div></div><div class="dot visible"></div><div></div><div class="dot visible"></div><div></div><div class="dot visible"></div><div></div><div class="dot visible"></div></div>
+            <div class="face bottom" data-face="2"><div class="dot visible"></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div class="dot visible"></div></div>
+        </div>
+    </div>
+
+    <button id="rollBtn" class="btn btn-roll" disabled data-i18n="rollDice">🌳 LEMPAR DADU</button>
+
+    <div class="setup-box">
+        <label for="playerCount" data-i18n="playerCountLabel">👥 Jumlah Peserta (Max 4):</label>
+        <select id="playerCount">
+            <option value="1" data-i18n="player1">1 Pemain</option>
+            <option value="2" selected data-i18n="player2">2 Pemain</option>
+            <option value="3" data-i18n="player3">3 Pemain</option>
+            <option value="4" data-i18n="player4">4 Pemain</option>
+        </select>
+    </div>
+    <button id="startBtn" class="btn btn-start" data-i18n="startGame">▶ MULAI PERMAINAN</button>
+
+    <div class="status-box">
+        <p id="turnIndicator" data-i18n="waitingStart">Menunggu Mulai...</p>
+        <p id="diceResult" data-i18n="diceResultDefault">Hasil Dadu: -</p>
+    </div>
+
+    <div class="scoreboard" id="scoreboard">
+        <h3 data-i18n="scoreboardTitle">🏆 SKOR PEMAIN</h3>
+    </div>
+</div>
+
+<!-- PANEL KANAN -->
+<div class="board-panel">
+    <div class="board-bg-layer"></div>
+    <div class="board-overlay-layer"></div>
+
+    <div class="board" id="board">
+        <!-- Baris atas -->
+        <div class="cell cell-mudah" data-pos="18" data-bg="https://images.unsplash.com/photo-1473341304170-971dccb5ac1e?w=600&auto=format&fit=crop"><span class="cell-number">18</span><span class="cell-icon">💡</span><span class="cell-label" data-i18n="cell18">Hemat Energi</span></div>
+        <div class="cell cell-sulit" data-pos="17" data-bg="https://images.unsplash.com/photo-1538300342682-cf57afb97285?w=400"><span class="cell-number">17</span><span class="cell-icon">💧</span><span class="cell-label" data-i18n="cell17">Hemat Air</span></div>
+        <div class="cell cell-sedang" data-pos="16" data-bg="https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=400"><span class="cell-number">16</span><span class="cell-icon">🌱</span><span class="cell-label" data-i18n="cell16">Semai Benih</span></div>
+        <div class="cell cell-mudah" data-pos="15" data-bg="https://images.unsplash.com/photo-1509391366360-2e959784a276?w=400"><span class="cell-number">15</span><span class="cell-icon">☀️</span><span class="cell-label" data-i18n="cell15">Pakai Panel Surya</span></div>
+        <div class="cell cell-sulit" data-pos="14" data-bg="https://images.unsplash.com/photo-1444927714506-8492d94b4e3d?w=600&auto=format&fit=crop"><span class="cell-number">14</span><span class="cell-icon">🦋</span><span class="cell-label" data-i18n="cell14">Lindungi Kupu-kupu</span></div>
+        <div class="cell cell-sedang" data-pos="13" data-bg="https://images.unsplash.com/photo-1532996122724-e3c354a0b15b?w=400"><span class="cell-number">13</span><span class="cell-icon">♻️</span><span class="cell-label" data-i18n="cell13">Daur Ulang</span></div>
+        <div class="cell cell-mudah" data-pos="12" data-bg="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400"><span class="cell-number">12</span><span class="cell-icon">🌍</span><span class="cell-label" data-i18n="cell12">Lindungi Bumi</span></div>
+
+        <!-- Baris kanan atas -->
+        <div class="cell cell-sedang" data-pos="19" data-bg="https://images.unsplash.com/photo-1474511320723-9a56873867b5?w=600&auto=format&fit=crop"><span class="cell-number">19</span><span class="cell-icon">🐾</span><span class="cell-label" data-i18n="cell19">Lindungi Hewan</span></div>
+
+        <!-- Center area -->
+        <div class="center-area">
+            <img src="https://i.ibb.co.com/7JH5j2Nz/LOGO-ECO-SPENSASED.png" alt="Logo Eco Board Game" class="logo-img">
+            <h2>ECO BOARD GAME</h2>
+            <p class="tagline" data-i18n="tagline">"Sekolah peduli lingkungan, generasi peduli masa depan"</p>
+        </div>
+
+        <!-- Baris kiri -->
+        <div class="cell cell-sulit" data-pos="11" data-bg="https://images.unsplash.com/photo-1548839140-29a749e1cf4d?w=400"><span class="cell-number">11</span><span class="cell-icon">🚰</span><span class="cell-label" data-i18n="cell11">Hemat Air</span></div>
+
+        <!-- Baris bawah / kanan bawah -->
+        <div class="cell cell-mudah" data-pos="20" data-bg="https://images.unsplash.com/photo-1466611653911-95081537e5b7?w=400"><span class="cell-number">20</span><span class="cell-icon">🌬️</span><span class="cell-label" data-i18n="cell20">Pakai Kincir Angin</span></div>
+        <div class="cell cell-mudah" data-pos="10" data-bg="https://images.unsplash.com/photo-1485965120184-e220f721d03e?w=400"><span class="cell-number">10</span><span class="cell-icon">🚲</span><span class="cell-label" data-i18n="cell10">Bersepeda</span></div>
+
+        <div class="cell cell-sedang" data-pos="21" data-bg="https://images.unsplash.com/photo-1593941707882-a5bba14938c7?w=600&auto=format&fit=crop"><span class="cell-number">21</span><span class="cell-icon">🚗</span><span class="cell-label" data-i18n="cell21">Naik Mobil Listrik</span></div>
+        <div class="cell cell-sedang" data-pos="9" data-bg="https://images.unsplash.com/photo-1604187351574-c75ca79f5807?w=600&auto=format&fit=crop"><span class="cell-number">9</span><span class="cell-icon">🗑️</span><span class="cell-label" data-i18n="cell9">Buang Sampah di Tempatnya</span></div>
+
+        <div class="cell cell-sulit" data-pos="22" data-bg="https://images.unsplash.com/photo-1595278069441-2cf29f8005a4?w=400"><span class="cell-number">22</span><span class="cell-icon">🧺</span><span class="cell-label" data-i18n="cell22">Pilah Sampah</span></div>
+        <div class="cell cell-sulit" data-pos="8" data-bg="https://images.unsplash.com/photo-1439066615861-d1af74d74000?w=400"><span class="cell-number">8</span><span class="cell-icon">🦆</span><span class="cell-label" data-i18n="cell8">Jaga Danau</span></div>
+
+        <div class="cell cell-finish" data-pos="23" data-bg="https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=400"><span class="cell-number">23</span><span class="cell-icon">🏆</span><span class="cell-label" data-i18n="cell23">Finish</span></div>
+        <div class="cell cell-mudah" data-pos="7" data-bg="https://images.unsplash.com/photo-1568605114967-8130f3a36994?w=600&auto=format&fit=crop"><span class="cell-number">7</span><span class="cell-icon">🏠</span><span class="cell-label" data-i18n="cell7">Rumah Hijau</span></div>
+
+        <div class="cell cell-start" data-pos="0" data-bg="https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=400"><span class="cell-number" data-i18n="start">START</span><span class="cell-icon">🚩</span><span class="cell-label" data-i18n="mulai">Mulai</span></div>
+        <div class="cell cell-mudah" data-pos="1" data-bg="https://images.unsplash.com/photo-1518495973542-4542c06a5843?w=400"><span class="cell-number">1</span><span class="cell-icon">🌳</span><span class="cell-label" data-i18n="cell1">Tanam Pohon</span></div>
+        <div class="cell cell-mudah" data-pos="2" data-bg="https://images.unsplash.com/photo-1614730321146-b6fa6a46bcb4?w=400"><span class="cell-number">2</span><span class="cell-icon">🌍</span><span class="cell-label" data-i18n="cell2">Cinta Bumi</span></div>
+        <div class="cell cell-mudah" data-pos="3" data-bg="https://images.unsplash.com/photo-1466692476868-aef1dfb1e735?w=400"><span class="cell-number">3</span><span class="cell-icon">🌱</span><span class="cell-label" data-i18n="cell3">Tanam Tanaman</span></div>
+        <div class="cell cell-mudah" data-pos="4" data-bg="https://images.unsplash.com/photo-1580582932707-520aed937b7b?w=400"><span class="cell-number">4</span><span class="cell-icon">🏫</span><span class="cell-label" data-i18n="cell4">Sekolah Hijau</span></div>
+        <div class="cell cell-mudah" data-pos="5" data-bg="https://images.unsplash.com/photo-1502082553048-f009c37129b9?w=400"><span class="cell-number">5</span><span class="cell-icon">🍃</span><span class="cell-label" data-i18n="cell5">Jaga Daun</span></div>
+        <div class="cell cell-mudah" data-pos="6" data-bg="https://images.unsplash.com/photo-1592982537447-7440770cbfc9?w=400"><span class="cell-number">6</span><span class="cell-icon">🌿</span><span class="cell-label" data-i18n="cell6">Buat Kompos</span></div>
+    </div>
+</div>
+
+<!-- MODAL PERTANYAAN -->
+<div class="question-modal" id="questionModal">
+    <div class="question-box">
+        <div>
+            <span class="question-category" id="questionCategory">LITERASI</span>
+            <span class="question-level" id="questionLevel">MUDAH</span>
+        </div>
+        <p class="question-player" id="questionPlayer">Pemain 1</p>
+        <p class="question-pos" id="questionPos">Kotak 1</p>
+        <p class="question-text" id="questionText">Pertanyaan...</p>
+        <div class="answers" id="answersContainer"></div>
+        <p class="question-feedback" id="questionFeedback"></p>
+        <p class="question-explanation" id="questionExplanation" style="display:none;"></p>
+    </div>
+</div>
+
+<button id="resetBtn" class="reset-btn" title="Ulang dari Awal">🔄</button>
+<div class="notification" id="notification"></div>
+
+<div class="modal-overlay" id="winModal">
+    <div class="modal-content">
+        <h2 data-i18n="winTitle">🎉 SELAMAT! 🎉</h2>
+        <p id="winnerText">Pemain 1 Menang!</p>
+        <button onclick="location.reload()" data-i18n="playAgain">MAIN LAGI</button>
+    </div>
+</div>
+
+<div class="modal-overlay" id="confirmResetModal">
+    <div class="modal-content">
+        <h2 data-i18n="resetTitle">🔄 ULANG PERMAINAN?</h2>
+        <p data-i18n="resetDesc">Semua progres akan hilang dan permainan dimulai dari awal.</p>
+        <button class="btn-danger" onclick="confirmReset()" data-i18n="yesReset">YA, ULANG</button>
+        <button class="btn-secondary" onclick="closeResetModal()" data-i18n="cancel">BATAL</button>
+    </div>
+</div>
+
+<script>
+// ============================================================
+// TRANSLATIONS
+// ============================================================
+const TRANSLATIONS = {
+    id: {
+        subtitle: "SMPN 1 Sedati - Sidoarjo",
+        rollDice: "🌳 LEMPAR DADU",
+        playerCountLabel: "👥 Jumlah Peserta (Max 4):",
+        player1: "1 Pemain", player2: "2 Pemain", player3: "3 Pemain", player4: "4 Pemain",
+        startGame: "▶ MULAI PERMAINAN",
+        waitingStart: "Menunggu Mulai...",
+        diceResultDefault: "Hasil Dadu: -",
+        scoreboardTitle: "🏆 SKOR PEMAIN",
+        tagline: '"Sekolah peduli lingkungan, generasi peduli masa depan"',
+        start: "START", mulai: "Mulai",
+        cell1: "Tanam Pohon", cell2: "Cinta Bumi", cell3: "Tanam Tanaman", cell4: "Sekolah Hijau",
+        cell5: "Jaga Daun", cell6: "Buat Kompos", cell7: "Rumah Hijau", cell8: "Jaga Danau",
+        cell9: "Buang Sampah di Tempatnya", cell10: "Bersepeda", cell11: "Hemat Air",
+        cell12: "Lindungi Bumi", cell13: "Daur Ulang", cell14: "Lindungi Kupu-kupu",
+        cell15: "Pakai Panel Surya", cell16: "Semai Benih", cell17: "Hemat Air",
+        cell18: "Hemat Energi", cell19: "Lindungi Hewan", cell20: "Pakai Kincir Angin",
+        cell21: "Naik Mobil Listrik", cell22: "Pilah Sampah", cell23: "Finish",
+        winTitle: "🎉 SELAMAT! 🎉", playAgain: "MAIN LAGI",
+        resetTitle: "🔄 ULANG PERMAINAN?", resetDesc: "Semua progres akan hilang dan permainan dimulai dari awal.",
+        yesReset: "YA, ULANG", cancel: "BATAL",
+        playerName: "Pemain", turnLabel: "Giliran:", diceResultLabel: "Hasil Dadu:",
+        notifGameStart: "🎮 Permainan Dimulai! {n} karakter di START.",
+        notifDiceRoll: "{name} dapat angka {n}!",
+        notifCantPass: "🎯 {name} tidak bisa lewat FINISH!",
+        notifCorrect: "✅ {name} BENAR! +{poin} poin",
+        notifWrong: "❌ {name} SALAH!",
+        notifTurn: "Giliran: {name}",
+        notifReset: "🔄 Permainan direset!",
+        feedbackCorrect: "✅ Benar! +{poin} poin",
+        feedbackWrong: "❌ Salah! Jawaban benar: {key}",
+        questionPlayerLabel: "Giliran: {name}",
+        questionPosLabel: "Kotak {pos} — {kategori}",
+        winnerText: "{name} Menang dengan {score} poin!",
+        categoryLabel: { literasi: "📖 LITERASI", numerasi: "🔢 NUMERASI", bernalar: "🧠 BERNALAR" },
+        levelLabel: { mudah: "MUDAH", sedang: "SEDANG", sulit: "SULIT" },
+        languageLabel: "Bahasa"
+    },
+    en: {
+        subtitle: "SMPN 1 Sedati - Sidoarjo",
+        rollDice: "🌳 ROLL DICE",
+        playerCountLabel: "👥 Number of Players (Max 4):",
+        player1: "1 Player", player2: "2 Players", player3: "3 Players", player4: "4 Players",
+        startGame: "▶ START GAME",
+        waitingStart: "Waiting to Start...",
+        diceResultDefault: "Dice Result: -",
+        scoreboardTitle: "🏆 PLAYER SCORES",
+        tagline: '"School cares for the environment, generation cares for the future"',
+        start: "START", mulai: "Go",
+        cell1: "Plant Trees", cell2: "Love the Earth", cell3: "Plant Plants", cell4: "Green School",
+        cell5: "Protect Leaves", cell6: "Make Compost", cell7: "Green House", cell8: "Protect the Lake",
+        cell9: "Throw Trash in Bin", cell10: "Ride a Bicycle", cell11: "Save Water",
+        cell12: "Protect the Earth", cell13: "Recycle", cell14: "Protect Butterflies",
+        cell15: "Use Solar Panels", cell16: "Sow Seeds", cell17: "Save Water",
+        cell18: "Save Energy", cell19: "Protect Animals", cell20: "Use Wind Turbine",
+        cell21: "Ride Electric Car", cell22: "Sort Waste", cell23: "Finish",
+        winTitle: "🎉 CONGRATULATIONS! 🎉", playAgain: "PLAY AGAIN",
+        resetTitle: "🔄 RESET GAME?", resetDesc: "All progress will be lost and the game will restart.",
+        yesReset: "YES, RESET", cancel: "CANCEL",
+        playerName: "Player", turnLabel: "Turn:", diceResultLabel: "Dice Result:",
+        notifGameStart: "🎮 Game Started! {n} characters at START.",
+        notifDiceRoll: "{name} rolled {n}!",
+        notifCantPass: "🎯 {name} cannot pass FINISH!",
+        notifCorrect: "✅ {name} CORRECT! +{poin} points",
+        notifWrong: "❌ {name} WRONG!",
+        notifTurn: "Turn: {name}",
+        notifReset: "🔄 Game reset!",
+        feedbackCorrect: "✅ Correct! +{poin} points",
+        feedbackWrong: "❌ Wrong! Correct answer: {key}",
+        questionPlayerLabel: "Turn: {name}",
+        questionPosLabel: "Box {pos} — {kategori}",
+        winnerText: "{name} Wins with {score} points!",
+        categoryLabel: { literasi: "📖 LITERACY", numerasi: "🔢 NUMERACY", bernalar: "🧠 REASONING" },
+        levelLabel: { mudah: "EASY", sedang: "MEDIUM", sulit: "HARD" },
+        languageLabel: "Language"
+    },
+    zh: {
+        subtitle: "SMPN 1 Sedati - Sidoarjo",
+        rollDice: "🌳 掷骰子",
+        playerCountLabel: "👥 玩家人数（最多4人）：",
+        player1: "1 位玩家", player2: "2 位玩家", player3: "3 位玩家", player4: "4 位玩家",
+        startGame: "▶ 开始游戏",
+        waitingStart: "等待开始...",
+        diceResultDefault: "骰子结果：-",
+        scoreboardTitle: "🏆 玩家得分",
+        tagline: '"学校关爱环境，世代关爱未来"',
+        start: "起点", mulai: "出发",
+        cell1: "种树", cell2: "爱护地球", cell3: "种植植物", cell4: "绿色学校",
+        cell5: "保护树叶", cell6: "制作堆肥", cell7: "绿色家园", cell8: "保护湖泊",
+        cell9: "垃圾入桶", cell10: "骑自行车", cell11: "节约用水",
+        cell12: "保护地球", cell13: "回收利用", cell14: "保护蝴蝶",
+        cell15: "使用太阳能板", cell16: "播种", cell17: "节约用水",
+        cell18: "节约能源", cell19: "保护动物", cell20: "使用风力发电机",
+        cell21: "驾驶电动车", cell22: "垃圾分类", cell23: "终点",
+        winTitle: "🎉 恭喜！ 🎉", playAgain: "再玩一次",
+        resetTitle: "🔄 重置游戏？", resetDesc: "所有进度将丢失，游戏将重新开始。",
+        yesReset: "是，重置", cancel: "取消",
+        playerName: "玩家", turnLabel: "回合：", diceResultLabel: "骰子结果：",
+        notifGameStart: "🎮 游戏开始！{n} 个角色在起点。",
+        notifDiceRoll: "{name} 掷出 {n}！",
+        notifCantPass: "🎯 {name} 不能超过终点！",
+        notifCorrect: "✅ {name} 正确！+{poin} 分",
+        notifWrong: "❌ {name} 错误！",
+        notifTurn: "回合：{name}",
+        notifReset: "🔄 游戏已重置！",
+        feedbackCorrect: "✅ 正确！+{poin} 分",
+        feedbackWrong: "❌ 错误！正确答案：{key}",
+        questionPlayerLabel: "回合：{name}",
+        questionPosLabel: "第 {pos} 格 — {kategori}",
+        winnerText: "{name} 以 {score} 分获胜！",
+        categoryLabel: { literasi: "📖 读写", numerasi: "🔢 算术", bernalar: "🧠 推理" },
+        levelLabel: { mudah: "简单", sedang: "中等", sulit: "困难" },
+        languageLabel: "语言"
+    },
+    ko: {
+        subtitle: "SMPN 1 Sedati - Sidoarjo",
+        rollDice: "🌳 주사위 굴리기",
+        playerCountLabel: "👥 참가자 수 (최대 4명):",
+        player1: "1명", player2: "2명", player3: "3명", player4: "4명",
+        startGame: "▶ 게임 시작",
+        waitingStart: "시작 대기 중...",
+        diceResultDefault: "주사위 결과: -",
+        scoreboardTitle: "🏆 플레이어 점수",
+        tagline: '"학교가 환경을 생각하고, 세대가 미래를 생각합니다"',
+        start: "출발", mulai: "시작",
+        cell1: "나무 심기", cell2: "지구 사랑", cell3: "식물 심기", cell4: "녹색 학교",
+        cell5: "잎 보호", cell6: "퇴비 만들기", cell7: "그린 하우스", cell8: "호수 보호",
+        cell9: "쓰레기 통에 버리기", cell10: "자전거 타기", cell11: "물 절약",
+        cell12: "지구 보호", cell13: "재활용", cell14: "나비 보호",
+        cell15: "태양광 패널 사용", cell16: "씨앗 심기", cell17: "물 절약",
+        cell18: "에너지 절약", cell19: "동물 보호", cell20: "풍력 터빈 사용",
+        cell21: "전기차 타기", cell22: "쓰레기 분리", cell23: "결승",
+        winTitle: "🎉 축하합니다! 🎉", playAgain: "다시 하기",
+        resetTitle: "🔄 게임 초기화?", resetDesc: "모든 진행 상황이 사라지고 게임이 다시 시작됩니다.",
+        yesReset: "예, 초기화", cancel: "취소",
+        playerName: "플레이어", turnLabel: "차례:", diceResultLabel: "주사위 결과:",
+        notifGameStart: "🎮 게임 시작! {n}명의 캐릭터가 출발선에 있습니다.",
+        notifDiceRoll: "{name}이(가) {n}을(를) 굴렸습니다!",
+        notifCantPass: "🎯 {name}은(는) 결승을 넘을 수 없습니다!",
+        notifCorrect: "✅ {name} 정답! +{poin}점",
+        notifWrong: "❌ {name} 오답!",
+        notifTurn: "차례: {name}",
+        notifReset: "🔄 게임이 초기화되었습니다!",
+        feedbackCorrect: "✅ 정답! +{poin}점",
+        feedbackWrong: "❌ 오답! 정답: {key}",
+        questionPlayerLabel: "차례: {name}",
+        questionPosLabel: "{pos}번 칸 — {kategori}",
+        winnerText: "{name}이(가) {score}점으로 승리했습니다!",
+        categoryLabel: { literasi: "📖 읽기", numerasi: "🔢 수리", bernalar: "🧠 추론" },
+        levelLabel: { mudah: "쉬움", sedang: "보통", sulit: "어려움" },
+        languageLabel: "언어"
+    },
+    ja: {
+        subtitle: "SMPN 1 Sedati - Sidoarjo",
+        rollDice: "🌳 サイコロを振る",
+        playerCountLabel: "👥 プレイヤー数（最大4人）：",
+        player1: "1人", player2: "2人", player3: "3人", player4: "4人",
+        startGame: "▶ ゲーム開始",
+        waitingStart: "開始待ち...",
+        diceResultDefault: "サイコロの結果：-",
+        scoreboardTitle: "🏆 プレイヤースコア",
+        tagline: '"学校は環境を思いやり、世代は未来を思いやる"',
+        start: "スタート", mulai: "出発",
+        cell1: "木を植える", cell2: "地球を愛する", cell3: "植物を植える", cell4: "グリーンスクール",
+        cell5: "葉を守る", cell6: "堆肥を作る", cell7: "グリーンハウス", cell8: "湖を守る",
+        cell9: "ゴミ箱に捨てる", cell10: "自転車に乗る", cell11: "水を節約",
+        cell12: "地球を守る", cell13: "リサイクル", cell14: "蝶を守る",
+        cell15: "太陽光パネルを使う", cell16: "種をまく", cell17: "水を節約",
+        cell18: "エネルギーを節約", cell19: "動物を守る", cell20: "風力タービンを使う",
+        cell21: "電気自動車に乗る", cell22: "ゴミを分別", cell23: "ゴール",
+        winTitle: "🎉 おめでとう！ 🎉", playAgain: "もう一度プレイ",
+        resetTitle: "🔄 ゲームをリセット？", resetDesc: "すべての進行状況が失われ、ゲームが最初から始まります。",
+        yesReset: "はい、リセット", cancel: "キャンセル",
+        playerName: "プレイヤー", turnLabel: "ターン：", diceResultLabel: "サイコロの結果：",
+        notifGameStart: "🎮 ゲーム開始！{n}人のキャラクターがスタートにいます。",
+        notifDiceRoll: "{name}が{n}を出しました！",
+        notifCantPass: "🎯 {name}はゴールを超えられません！",
+        notifCorrect: "✅ {name} 正解！+{poin}ポイント",
+        notifWrong: "❌ {name} 不正解！",
+        notifTurn: "ターン：{name}",
+        notifReset: "🔄 ゲームがリセットされました！",
+        feedbackCorrect: "✅ 正解！+{poin}ポイント",
+        feedbackWrong: "❌ 不正解！正しい答え：{key}",
+        questionPlayerLabel: "ターン：{name}",
+        questionPosLabel: "{pos}番マス — {kategori}",
+        winnerText: "{name}が{score}ポイントで勝利！",
+        categoryLabel: { literasi: "📖 リテラシー", numerasi: "🔢 計算", bernalar: "🧠 思考" },
+        levelLabel: { mudah: "簡単", sedang: "普通", sulit: "難しい" },
+        languageLabel: "言語"
+    },
+    ar: {
+        subtitle: "SMPN 1 Sedati - Sidoarjo",
+        rollDice: "🌳 ارمِ النرد",
+        playerCountLabel: "👥 عدد اللاعبين (الأقصى 4):",
+        player1: "لاعب واحد", player2: "لاعبان", player3: "3 لاعبين", player4: "4 لاعبين",
+        startGame: "▶ ابدأ اللعبة",
+        waitingStart: "في انتظار البدء...",
+        diceResultDefault: "نتيجة النرد: -",
+        scoreboardTitle: "🏆 نقاط اللاعبين",
+        tagline: '"المدرسة تهتم بالبيئة، والجيل يهتم بالمستقبل"',
+        start: "البداية", mulai: "انطلق",
+        cell1: "ازرع الأشجار", cell2: "أحب الأرض", cell3: "ازرع النباتات", cell4: "مدرسة خضراء",
+        cell5: "احمِ الأوراق", cell6: "اصنع السماد", cell7: "بيت أخضر", cell8: "احمِ البحيرة",
+        cell9: "ارمِ القمامة في السلة", cell10: "اركب الدراجة", cell11: "وفر الماء",
+        cell12: "احمِ الأرض", cell13: "أعد التدوير", cell14: "احمِ الفراشات",
+        cell15: "استخدم الألواح الشمسية", cell16: "ازرع البذور", cell17: "وفر الماء",
+        cell18: "وفر الطاقة", cell19: "احمِ الحيوانات", cell20: "استخدم توربينات الرياح",
+        cell21: "اركب سيارة كهربائية", cell22: "افصل النفايات", cell23: "النهاية",
+        winTitle: "🎉 مبروك! 🎉", playAgain: "العب مرة أخرى",
+        resetTitle: "🔄 إعادة تعيين اللعبة؟", resetDesc: "سيتم فقدان كل التقدم وستبدأ اللعبة من جديد.",
+        yesReset: "نعم، أعد التعيين", cancel: "إلغاء",
+        playerName: "لاعب", turnLabel: "الدور:", diceResultLabel: "نتيجة النرد:",
+        notifGameStart: "🎮 بدأت اللعبة! {n} شخصيات في البداية.",
+        notifDiceRoll: "{name} رمى {n}!",
+        notifCantPass: "🎯 {name} لا يمكنه تجاوز النهاية!",
+        notifCorrect: "✅ {name} صحيح! +{poin} نقطة",
+        notifWrong: "❌ {name} خطأ!",
+        notifTurn: "الدور: {name}",
+        notifReset: "🔄 تمت إعادة تعيين اللعبة!",
+        feedbackCorrect: "✅ صحيح! +{poin} نقطة",
+        feedbackWrong: "❌ خطأ! الإجابة الصحيحة: {key}",
+        questionPlayerLabel: "الدور: {name}",
+        questionPosLabel: "المربع {pos} — {kategori}",
+        winnerText: "{name} فاز بـ {score} نقطة!",
+        categoryLabel: { literasi: "📖 القراءة", numerasi: "🔢 الحساب", bernalar: "🧠 التفكير" },
+        levelLabel: { mudah: "سهل", sedang: "متوسط", sulit: "صعب" },
+        languageLabel: "اللغة"
+    }
+};
+
+// ============================================================
+// QUESTION SETS PER LANGUAGE
+// ============================================================
+const QUESTIONS_ALL = {
+    id: {
+        1: { kategori: 'literasi', level: 'mudah', text: 'Bacalah kalimat berikut:\n"Setiap pagi, Rina menyiram tanaman di depan kelas sebelum bel masuk berbunyi."\n\nApa kegiatan Rina setiap pagi?', answers: { A: 'Menyiram tanaman di depan kelas', B: 'Membaca buku di perpustakaan', C: 'Bermain di halaman sekolah', D: 'Menyapu kelas' }, correct: 'A', explanation: 'Jawaban A benar karena pada kalimat tertulis jelas "Rina menyiram tanaman di depan kelas".' },
+        2: { kategori: 'numerasi', level: 'mudah', text: 'Di kebun sekolah terdapat 24 bibit pohon. Sebanyak 1/3 dari bibit sudah ditanam. Berapa bibit yang belum ditanam?', answers: { A: '8 bibit', B: '12 bibit', C: '16 bibit', D: '18 bibit' }, correct: 'C', explanation: 'Bibit ditanam = 1/3 × 24 = 8. Bibit belum ditanam = 24 − 8 = 16 bibit.' },
+        3: { kategori: 'bernalar', level: 'mudah', text: 'Setiap pagi Andi melihat sampah plastik berserakan di halaman sekolah. Ia ingin mengatasinya.\n\nApa tindakan PALING TEPAT yang sebaiknya dilakukan Andi?', answers: { A: 'Membiarkan saja karena bukan tugasnya', B: 'Mengajak teman membuat tempat sampah pilah dan poster ajakan', C: 'Menyalahkan petugas kebersihan', D: 'Membakar sampah di halaman' }, correct: 'B', explanation: 'Solusi terbaik adalah tindakan preventif dan kolaboratif.' },
+        4: { kategori: 'literasi', level: 'mudah', text: 'Bacalah teks berikut:\n"Adiwiyata adalah program sekolah peduli lingkungan. Sekolah yang mendapat predikat Adiwiyata harus menjaga kebersihan, menanam pohon, dan menghemat energi."\n\nApa syarat sekolah Adiwiyata menurut teks?', answers: { A: 'Memiliki banyak siswa', B: 'Menjaga kebersihan, menanam pohon, dan menghemat energi', C: 'Membeli alat olahraga', D: 'Menambah jam pelajaran' }, correct: 'B', explanation: 'Sesuai teks, syaratnya adalah menjaga kebersihan, menanam pohon, dan menghemat energi.' },
+        5: { kategori: 'numerasi', level: 'mudah', text: 'Sebuah kelas mengumpulkan 15 kg sampah plastik dalam 5 hari. Jika setiap hari jumlahnya sama, berapa kg sampah yang dikumpulkan per hari?', answers: { A: '2 kg', B: '3 kg', C: '4 kg', D: '5 kg' }, correct: 'B', explanation: '15 kg ÷ 5 hari = 3 kg per hari.' },
+        6: { kategori: 'bernalar', level: 'mudah', text: 'Di kantin sekolah, banyak siswa membeli makanan dalam kemasan plastik sekali pakai. Sampah plastik menumpuk setiap hari.\n\nStrategi PALING EFEKTIF untuk mengurangi masalah ini adalah...', answers: { A: 'Melarang siswa jajan di kantin', B: 'Menyediakan tempat sampah lebih banyak', C: 'Mewajibkan siswa membawa tumbler dan wadah makan sendiri', D: 'Menutup kantin sekolah' }, correct: 'C', explanation: 'Solusi jangka panjang adalah mencegah timbulnya sampah dari sumbernya.' },
+        7: { kategori: 'literasi', level: 'mudah', text: 'Perhatikan kalimat berikut:\n"Rumah yang sehat selalu memiliki ventilasi udara yang baik, sehingga udara segar dapat masuk dan udara kotor dapat keluar."\n\nApa fungsi ventilasi udara?', answers: { A: 'Sebagai hiasan rumah', B: 'Mengalirkan udara segar masuk dan udara kotor keluar', C: 'Tempat menyimpan barang', D: 'Menutup jendela' }, correct: 'B', explanation: 'Fungsi utama ventilasi adalah sirkulasi udara.' },
+        8: { kategori: 'bernalar', level: 'sulit', text: 'Sebuah sungai di dekat pabrik berubah warna menjadi hitam dan banyak ikan mati. Warga sekitar mulai sakit kulit.\n\nAnalisis penyebab paling logis dari masalah ini adalah...', answers: { A: 'Ikan mati karena cuaca dingin', B: 'Warga sakit karena kekurangan vitamin', C: 'Limbah pabrik yang dibuang ke sungai mencemari air', D: 'Sungai kekurangan air' }, correct: 'C', explanation: 'Limbah pabrik yang dibuang tanpa diolah mencemari air.' },
+        9: { kategori: 'numerasi', level: 'sedang', text: 'Sebuah sekolah menghasilkan 60 kg sampah per hari. Sebanyak 40% adalah sampah organik, 35% plastik, dan sisanya kertas.\n\nBerapa kg sampah kertas per hari?', answers: { A: '10 kg', B: '12 kg', C: '15 kg', D: '18 kg' }, correct: 'C', explanation: 'Organik 40% + plastik 35% = 75%. Sisa kertas = 25%. 25% × 60 = 15 kg.' },
+        10: { kategori: 'literasi', level: 'mudah', text: 'Bacalah kalimat berikut:\n"Bersepeda ke sekolah bukan hanya menyehatkan tubuh, tetapi juga mengurangi polusi udara."\n\nApa dua manfaat bersepeda ke sekolah menurut kalimat tersebut?', answers: { A: 'Menghemat uang dan cepat sampai', B: 'Menyehatkan tubuh dan mengurangi polusi', C: 'Membuat lelah dan menghemat bensin', D: 'Menambah teman dan murah' }, correct: 'B', explanation: 'Teks menyebutkan dua manfaat: menyehatkan tubuh dan mengurangi polusi.' },
+        11: { kategori: 'bernalar', level: 'sulit', text: 'Suhu rata-rata bumi terus meningkat setiap tahun. Es di kutub mencair, permukaan air laut naik, dan cuaca menjadi ekstrem.\n\nKesimpulan yang paling tepat dari fenomena ini adalah...', answers: { A: 'Bumi sedang memasuki zaman es', B: 'Terjadi pemanasan global akibat efek rumah kaca', C: 'Bumi berhenti berputar', D: 'Matahari semakin dekat ke bumi' }, correct: 'B', explanation: 'Peningkatan suhu global, pencairan es, dan cuaca ekstrem adalah gejala pemanasan global.' },
+        12: { kategori: 'literasi', level: 'mudah', text: 'Bacalah teks berikut:\n"Hutan adalah paru-paru dunia. Hutan menyerap karbon dioksida dan menghasilkan oksigen yang kita hirup."\n\nApa julukan untuk hutan dalam teks tersebut?', answers: { A: 'Jantung dunia', B: 'Paru-paru dunia', C: 'Ginjal dunia', D: 'Otak dunia' }, correct: 'B', explanation: 'Teks menyebut hutan sebagai "paru-paru dunia".' },
+        13: { kategori: 'bernalar', level: 'sedang', text: 'Sekolah A dan Sekolah B sama-sama menghasilkan 50 kg sampah plastik per hari. Sekolah A mendaur ulang 80% sampahnya, sedangkan Sekolah B hanya 20%.\n\nKesimpulan yang paling tepat adalah...', answers: { A: 'Sekolah A lebih baik dalam pengelolaan sampah plastik', B: 'Sekolah B lebih hemat', C: 'Keduanya sama baiknya', D: 'Sekolah B lebih peduli lingkungan' }, correct: 'A', explanation: 'Sekolah A mendaur ulang 80% (40 kg), sedangkan B hanya 20% (10 kg).' },
+        14: { kategori: 'literasi', level: 'sulit', text: 'Bacalah paragraf berikut:\n"Biodiversitas atau keanekaragaman hayati adalah variasi makhluk hidup di suatu wilayah. Semakin tinggi biodiversitas, semakin stabil ekosistem karena setiap spesies memiliki peran masing-masing."\n\nMengapa biodiversitas tinggi membuat ekosistem stabil?', answers: { A: 'Karena semua spesies sama', B: 'Karena setiap spesies memiliki peran masing-masing', C: 'Karena jumlah hewan banyak', D: 'Karena wilayahnya luas' }, correct: 'B', explanation: 'Stabilitas ekosistem terjadi karena setiap spesies punya peran yang saling melengkapi.' },
+        15: { kategori: 'numerasi', level: 'mudah', text: 'Sebuah panel surya dapat menghasilkan 4 kWh listrik per hari. Jika sekolah memiliki 5 panel surya, berapa total listrik yang dihasilkan per hari?', answers: { A: '9 kWh', B: '16 kWh', C: '20 kWh', D: '24 kWh' }, correct: 'C', explanation: '4 kWh × 5 panel = 20 kWh per hari.' },
+        16: { kategori: 'bernalar', level: 'sedang', text: 'Sebuah sekolah ingin menerapkan "zero waste". Mereka punya 3 pilihan:\n(1) Membeli tempat sampah baru\n(2) Mengadakan lomba kelas tanpa sampah\n(3) Mewajibkan siswa membawa botol minum sendiri\n\nPilihan mana yang PALING mendukung zero waste?', answers: { A: 'Hanya pilihan 1', B: 'Pilihan 2 dan 3', C: 'Hanya pilihan 3', D: 'Semua pilihan sama baiknya' }, correct: 'B', explanation: 'Zero waste berarti mencegah sampah dari sumbernya.' },
+        17: { kategori: 'numerasi', level: 'sulit', text: 'Sebuah keran bocor meneteskan 5 ml air per detik. Berapa liter air yang terbuang dalam 1 jam? (1 liter = 1.000 ml)', answers: { A: '9 liter', B: '12 liter', C: '18 liter', D: '20 liter' }, correct: 'C', explanation: '1 jam = 3.600 detik. 5 ml × 3.600 = 18.000 ml = 18 liter.' },
+        18: { kategori: 'bernalar', level: 'mudah', text: 'Setiap pagi kelas 7A membuka jendela dan mematikan lampu saat matahari sudah terang.\n\nApa manfaat utama dari kebiasaan ini?', answers: { A: 'Membuat kelas lebih gelap', B: 'Menghemat energi listrik dan memanfaatkan cahaya alami', C: 'Membuat siswa mengantuk', D: 'Menambah biaya listrik' }, correct: 'B', explanation: 'Memanfaatkan cahaya matahari = menghemat energi listrik.' },
+        19: { kategori: 'literasi', level: 'sedang', text: 'Bacalah kalimat berikut:\n"Burung-burung di lingkungan sekolah mulai jarang terlihat karena banyak pohon ditebang untuk perluasan parkir."\n\nApa hubungan sebab-akibat dari kalimat tersebut?', answers: { A: 'Burung hilang karena cuaca panas', B: 'Pohon ditebang menyebabkan burung kehilangan habitat', C: 'Burung pindah karena suka tempat baru', D: 'Parkir membuat burung senang' }, correct: 'B', explanation: 'Sebab: penebangan pohon. Akibat: burung kehilangan habitat.' },
+        20: { kategori: 'numerasi', level: 'mudah', text: 'Sebuah kincir angin menghasilkan 30 kWh listrik per hari. Jika 1 rumah membutuhkan 3 kWh per hari, berapa rumah yang bisa dilayani?', answers: { A: '5 rumah', B: '8 rumah', C: '10 rumah', D: '15 rumah' }, correct: 'C', explanation: '30 kWh ÷ 3 kWh per rumah = 10 rumah.' },
+        21: { kategori: 'bernalar', level: 'sedang', text: 'Sebuah sekolah mempertimbangkan mengganti angkutan antar-jemput berbahan bakar bensin menjadi mobil listrik.\n\nApa pertimbangan PALING TEPAT sebelum memutuskan?', answers: { A: 'Harga mobil listrik lebih mahal, jadi tidak perlu', B: 'Membandingkan biaya, dampak lingkungan, dan ketersediaan infrastruktur', C: 'Mobil bensin lebih cepat, jadi pilih bensin', D: 'Ikut-ikutan sekolah lain' }, correct: 'B', explanation: 'Keputusan yang baik mempertimbangkan beberapa aspek.' },
+        22: { kategori: 'literasi', level: 'sulit', text: 'Bacalah paragraf berikut:\n"Jejak karbon (carbon footprint) adalah total gas rumah kaca yang dihasilkan dari aktivitas manusia, baik langsung maupun tidak langsung. Semakin tinggi jejak karbon seseorang, semakin besar kontribusinya terhadap pemanasan global."\n\nApa yang dimaksud dengan jejak karbon?', answers: { A: 'Bekas sepatu di tanah', B: 'Total gas rumah kaca dari aktivitas manusia', C: 'Jejak kaki hewan', D: 'Nama merek sepatu' }, correct: 'B', explanation: 'Jejak karbon = total gas rumah kaca dari aktivitas manusia.' },
+        23: { kategori: 'bernalar', level: 'sulit', text: 'Sebuah sekolah ingin membangun gedung baru. Ada 2 pilihan:\n(A) Menebang 50 pohon di halaman\n(B) Memanfaatkan lahan kosong bekas parkir\n\nManakah pilihan yang sesuai dengan prinsip pembangunan berkelanjutan?', answers: { A: 'Pilihan A karena lebih cepat', B: 'Pilihan B karena mempertahankan pohon dan memanfaatkan lahan yang ada', C: 'Pilihan A karena pohon bisa ditanam lagi', D: 'Keduanya sama saja' }, correct: 'B', explanation: 'Pembangunan berkelanjutan berarti memenuhi kebutuhan tanpa mengorbankan lingkungan.' }
+    },
+    en: {
+        1: { kategori: 'literasi', level: 'mudah', text: 'Read the following sentence:\n"Every morning, Rina waters the plants in front of the class before the bell rings."\n\nWhat does Rina do every morning?', answers: { A: 'Waters the plants in front of the class', B: 'Reads books in the library', C: 'Plays in the schoolyard', D: 'Sweeps the classroom' }, correct: 'A', explanation: 'Answer A is correct because the sentence clearly states "Rina waters the plants in front of the class".' },
+        2: { kategori: 'numerasi', level: 'mudah', text: 'In the school garden there are 24 tree seedlings. 1/3 of the seedlings have been planted. How many seedlings have not been planted?', answers: { A: '8 seedlings', B: '12 seedlings', C: '16 seedlings', D: '18 seedlings' }, correct: 'C', explanation: 'Planted = 1/3 × 24 = 8. Not planted = 24 − 8 = 16 seedlings.' },
+        3: { kategori: 'bernalar', level: 'mudah', text: 'Every morning Andi sees plastic trash scattered in the schoolyard. He wants to solve it.\n\nWhat is the MOST APPROPRIATE action for Andi to take?', answers: { A: 'Ignore it because it is not his job', B: 'Invite friends to make sorted bins and awareness posters', C: 'Blame the cleaning staff', D: 'Burn the trash in the yard' }, correct: 'B', explanation: 'The best solution is preventive and collaborative action.' },
+        4: { kategori: 'literasi', level: 'mudah', text: 'Read the following text:\n"Adiwiyata is an environmentally caring school program. Schools that receive the Adiwiyata title must keep clean, plant trees, and save energy."\n\nWhat are the requirements for an Adiwiyata school according to the text?', answers: { A: 'Have many students', B: 'Keep clean, plant trees, and save energy', C: 'Buy sports equipment', D: 'Add lesson hours' }, correct: 'B', explanation: 'According to the text, the requirements are keeping clean, planting trees, and saving energy.' },
+        5: { kategori: 'numerasi', level: 'mudah', text: 'A class collects 15 kg of plastic waste in 5 days. If the amount is the same each day, how many kg of waste are collected per day?', answers: { A: '2 kg', B: '3 kg', C: '4 kg', D: '5 kg' }, correct: 'B', explanation: '15 kg ÷ 5 days = 3 kg per day.' },
+        6: { kategori: 'bernalar', level: 'mudah', text: 'In the school cafeteria, many students buy food in single-use plastic packaging. Plastic waste piles up every day.\n\nThe MOST EFFECTIVE strategy to reduce this problem is...', answers: { A: 'Ban students from buying snacks', B: 'Provide more trash bins', C: 'Require students to bring their own tumblers and food containers', D: 'Close the school cafeteria' }, correct: 'C', explanation: 'The long-term solution is to prevent waste at its source.' },
+        7: { kategori: 'literasi', level: 'mudah', text: 'Look at the following sentence:\n"A healthy house always has good air ventilation, so fresh air can enter and dirty air can leave."\n\nWhat is the function of air ventilation?', answers: { A: 'As house decoration', B: 'Circulate fresh air in and dirty air out', C: 'A place to store things', D: 'Close the windows' }, correct: 'B', explanation: 'The main function of ventilation is air circulation.' },
+        8: { kategori: 'bernalar', level: 'sulit', text: 'A river near a factory turned black and many fish died. Nearby residents began to get skin diseases.\n\nThe most logical analysis of the cause of this problem is...', answers: { A: 'Fish died because of cold weather', B: 'Residents got sick from vitamin deficiency', C: 'Factory waste dumped into the river polluted the water', D: 'The river lacks water' }, correct: 'C', explanation: 'Factory waste dumped without treatment pollutes the water.' },
+        9: { kategori: 'numerasi', level: 'sedang', text: 'A school produces 60 kg of waste per day. 40% is organic waste, 35% plastic, and the rest paper.\n\nHow many kg of paper waste per day?', answers: { A: '10 kg', B: '12 kg', C: '15 kg', D: '18 kg' }, correct: 'C', explanation: 'Organic 40% + plastic 35% = 75%. Paper = 25%. 25% × 60 = 15 kg.' },
+        10: { kategori: 'literasi', level: 'mudah', text: 'Read the following sentence:\n"Cycling to school not only makes the body healthy, but also reduces air pollution."\n\nWhat are the two benefits of cycling to school according to the sentence?', answers: { A: 'Save money and arrive quickly', B: 'Healthier body and less pollution', C: 'Make you tired and save gasoline', D: 'Make more friends and cheap' }, correct: 'B', explanation: 'The text mentions two benefits: healthy body and reduced pollution.' },
+        11: { kategori: 'bernalar', level: 'sulit', text: 'The average temperature of the earth continues to rise every year. Polar ice melts, sea levels rise, and weather becomes extreme.\n\nThe most appropriate conclusion from this phenomenon is...', answers: { A: 'The earth is entering an ice age', B: 'Global warming is occurring due to the greenhouse effect', C: 'The earth has stopped rotating', D: 'The sun is getting closer to the earth' }, correct: 'B', explanation: 'Global temperature rise, ice melting, and extreme weather are symptoms of global warming.' },
+        12: { kategori: 'literasi', level: 'mudah', text: 'Read the following text:\n"Forests are the lungs of the world. Forests absorb carbon dioxide and produce the oxygen we breathe."\n\nWhat is the nickname for forests in the text?', answers: { A: 'Heart of the world', B: 'Lungs of the world', C: 'Kidney of the world', D: 'Brain of the world' }, correct: 'B', explanation: 'The text calls forests "the lungs of the world".' },
+        13: { kategori: 'bernalar', level: 'sedang', text: 'School A and School B both produce 50 kg of plastic waste per day. School A recycles 80% of its waste, while School B only 20%.\n\nThe most appropriate conclusion is...', answers: { A: 'School A is better at plastic waste management', B: 'School B is more economical', C: 'Both are equally good', D: 'School B cares more about the environment' }, correct: 'A', explanation: 'School A recycles 80% (40 kg), while B only 20% (10 kg).' },
+        14: { kategori: 'literasi', level: 'sulit', text: 'Read the following paragraph:\n"Biodiversity is the variety of living things in an area. The higher the biodiversity, the more stable the ecosystem because each species has its own role."\n\nWhy does high biodiversity make ecosystems stable?', answers: { A: 'Because all species are the same', B: 'Because each species has its own role', C: 'Because there are many animals', D: 'Because the area is large' }, correct: 'B', explanation: 'Ecosystem stability occurs because each species has a complementary role.' },
+        15: { kategori: 'numerasi', level: 'mudah', text: 'A solar panel can produce 4 kWh of electricity per day. If the school has 5 solar panels, how much total electricity is produced per day?', answers: { A: '9 kWh', B: '16 kWh', C: '20 kWh', D: '24 kWh' }, correct: 'C', explanation: '4 kWh × 5 panels = 20 kWh per day.' },
+        16: { kategori: 'bernalar', level: 'sedang', text: 'A school wants to implement "zero waste". They have 3 options:\n(1) Buy new trash bins\n(2) Hold a waste-free class competition\n(3) Require students to bring their own water bottles\n\nWhich option BEST supports zero waste?', answers: { A: 'Only option 1', B: 'Options 2 and 3', C: 'Only option 3', D: 'All options are equally good' }, correct: 'B', explanation: 'Zero waste means preventing waste at its source.' },
+        17: { kategori: 'numerasi', level: 'sulit', text: 'A leaking faucet drips 5 ml of water per second. How many liters of water are wasted in 1 hour? (1 liter = 1,000 ml)', answers: { A: '9 liters', B: '12 liters', C: '18 liters', D: '20 liters' }, correct: 'C', explanation: '1 hour = 3,600 seconds. 5 ml × 3,600 = 18,000 ml = 18 liters.' },
+        18: { kategori: 'bernalar', level: 'mudah', text: 'Every morning class 7A opens the windows and turns off the lights when the sun is bright.\n\nWhat is the main benefit of this habit?', answers: { A: 'Makes the class darker', B: 'Saves electrical energy and uses natural light', C: 'Makes students sleepy', D: 'Increases electricity costs' }, correct: 'B', explanation: 'Using sunlight = saving electrical energy.' },
+        19: { kategori: 'literasi', level: 'sedang', text: 'Read the following sentence:\n"Birds in the school environment are becoming rare because many trees are cut down for parking expansion."\n\nWhat is the cause-and-effect relationship in the sentence?', answers: { A: 'Birds disappear because of hot weather', B: 'Cut trees cause birds to lose their habitat', C: 'Birds move because they like new places', D: 'Parking makes birds happy' }, correct: 'B', explanation: 'Cause: tree cutting. Effect: birds lose their habitat.' },
+        20: { kategori: 'numerasi', level: 'mudah', text: 'A wind turbine produces 30 kWh of electricity per day. If 1 house needs 3 kWh per day, how many houses can it serve?', answers: { A: '5 houses', B: '8 houses', C: '10 houses', D: '15 houses' }, correct: 'C', explanation: '30 kWh ÷ 3 kWh per house = 10 houses.' },
+        21: { kategori: 'bernalar', level: 'sedang', text: 'A school is considering replacing its gasoline-fueled shuttle with an electric car.\n\nWhat is the MOST APPROPRIATE consideration before deciding?', answers: { A: 'Electric cars are more expensive, so no need', B: 'Compare cost, environmental impact, and infrastructure availability', C: 'Gasoline cars are faster, so choose gasoline', D: 'Follow other schools' }, correct: 'B', explanation: 'Good decisions consider multiple aspects.' },
+        22: { kategori: 'literasi', level: 'sulit', text: 'Read the following paragraph:\n"Carbon footprint is the total greenhouse gases produced from human activities, both directly and indirectly. The higher one\'s carbon footprint, the greater their contribution to global warming."\n\nWhat is a carbon footprint?', answers: { A: 'Shoe marks on the ground', B: 'Total greenhouse gases from human activities', C: 'Animal footprints', D: 'A shoe brand name' }, correct: 'B', explanation: 'Carbon footprint = total greenhouse gases from human activities.' },
+        23: { kategori: 'bernalar', level: 'sulit', text: 'A school wants to build a new building. There are 2 options:\n(A) Cut down 50 trees in the yard\n(B) Use the empty former parking lot\n\nWhich option aligns with sustainable development principles?', answers: { A: 'Option A because it is faster', B: 'Option B because it preserves trees and uses existing land', C: 'Option A because trees can be replanted', D: 'Both are the same' }, correct: 'B', explanation: 'Sustainable development means meeting needs without sacrificing the environment.' }
+    },
+    zh: {
+        1: { kategori: 'literasi', level: 'mudah', text: '阅读以下句子：\n"每天早上，丽娜在铃声响起前给教室前的植物浇水。"\n\n丽娜每天早上做什么？', answers: { A: '给教室前的植物浇水', B: '在图书馆看书', C: '在操场上玩耍', D: '打扫教室' }, correct: 'A', explanation: '答案A正确，因为句子明确写道"丽娜给教室前的植物浇水"。' },
+        2: { kategori: 'numerasi', level: 'mudah', text: '学校花园里有24棵树苗。1/3的树苗已经种下。还有多少棵树苗没有种？', answers: { A: '8棵', B: '12棵', C: '16棵', D: '18棵' }, correct: 'C', explanation: '已种 = 1/3 × 24 = 8。未种 = 24 − 8 = 16棵。' },
+        3: { kategori: 'bernalar', level: 'mudah', text: '每天早上安迪看到校园里散落着塑料垃圾。他想解决这个问题。\n\n安迪最应该采取的行动是什么？', answers: { A: '不管它，因为不是他的工作', B: '邀请朋友制作分类垃圾桶和宣传海报', C: '责怪清洁工', D: '在院子里焚烧垃圾' }, correct: 'B', explanation: '最好的解决方案是预防和协作行动。' },
+        4: { kategori: 'literasi', level: 'mudah', text: '阅读以下文本：\n"Adiwiyata是一个关爱环境的学校项目。获得Adiwiyata称号的学校必须保持清洁、种树和节约能源。"\n\n根据文本，Adiwiyata学校的要求是什么？', answers: { A: '有很多学生', B: '保持清洁、种树和节约能源', C: '购买体育器材', D: '增加课时' }, correct: 'B', explanation: '根据文本，要求是保持清洁、种树和节约能源。' },
+        5: { kategori: 'numerasi', level: 'mudah', text: '一个班级在5天内收集了15公斤塑料垃圾。如果每天数量相同，每天收集多少公斤垃圾？', answers: { A: '2公斤', B: '3公斤', C: '4公斤', D: '5公斤' }, correct: 'B', explanation: '15公斤 ÷ 5天 = 每天3公斤。' },
+        6: { kategori: 'bernalar', level: 'mudah', text: '在学校食堂，许多学生购买一次性塑料包装的食物。塑料垃圾每天堆积。\n\n减少这个问题最有效的策略是……', answers: { A: '禁止学生在食堂买零食', B: '提供更多垃圾桶', C: '要求学生自带水杯和饭盒', D: '关闭学校食堂' }, correct: 'C', explanation: '长期的解决方案是从源头防止垃圾产生。' },
+        7: { kategori: 'literasi', level: 'mudah', text: '看以下句子：\n"健康的房子总是有良好的通风，这样新鲜空气可以进入，脏空气可以排出。"\n\n通风的作用是什么？', answers: { A: '作为房子装饰', B: '让新鲜空气进入，脏空气排出', C: '存放物品的地方', D: '关闭窗户' }, correct: 'B', explanation: '通风的主要功能是空气流通。' },
+        8: { kategori: 'bernalar', level: 'sulit', text: '工厂附近的河流变黑了，许多鱼死了。附近居民开始患皮肤病。\n\n这个问题原因的最合理分析是……', answers: { A: '鱼因天气寒冷而死', B: '居民因缺乏维生素而生病', C: '工厂废料排入河流污染了水', D: '河流缺水' }, correct: 'C', explanation: '未经处理的工厂废料排入河流会污染水源。' },
+        9: { kategori: 'numerasi', level: 'sedang', text: '一所学校每天产生60公斤垃圾。40%是有机垃圾，35%是塑料，其余是纸。\n\n每天有多少公斤纸垃圾？', answers: { A: '10公斤', B: '12公斤', C: '15公斤', D: '18公斤' }, correct: 'C', explanation: '有机40% + 塑料35% = 75%。纸 = 25%。25% × 60 = 15公斤。' },
+        10: { kategori: 'literasi', level: 'mudah', text: '阅读以下句子：\n"骑自行车上学不仅使身体健康，还减少空气污染。"\n\n根据句子，骑自行车上学的两个好处是什么？', answers: { A: '省钱和快速到达', B: '身体健康和减少污染', C: '使人疲惫和节省汽油', D: '交更多朋友和便宜' }, correct: 'B', explanation: '文本提到两个好处：身体健康和减少污染。' },
+        11: { kategori: 'bernalar', level: 'sulit', text: '地球的平均温度每年持续上升。极地冰融化，海平面上升，天气变得极端。\n\n这个现象最合适的结论是……', answers: { A: '地球正在进入冰河时代', B: '由于温室效应正在发生全球变暖', C: '地球停止旋转', D: '太阳越来越接近地球' }, correct: 'B', explanation: '全球温度上升、冰融化和极端天气是全球变暖的症状。' },
+        12: { kategori: 'literasi', level: 'mudah', text: '阅读以下文本：\n"森林是世界的肺。森林吸收二氧化碳并产生我们呼吸的氧气。"\n\n文本中森林的绰号是什么？', answers: { A: '世界之心', B: '世界之肺', C: '世界之肾', D: '世界之脑' }, correct: 'B', explanation: '文本称森林为"世界之肺"。' },
+        13: { kategori: 'bernalar', level: 'sedang', text: 'A学校和B学校每天产生50公斤塑料垃圾。A学校回收80%的垃圾，而B学校只回收20%。\n\n最合适的结论是……', answers: { A: 'A学校在塑料垃圾管理方面更好', B: 'B学校更经济', C: '两者一样好', D: 'B学校更关心环境' }, correct: 'A', explanation: 'A学校回收80%（40公斤），而B只回收20%（10公斤）。' },
+        14: { kategori: 'literasi', level: 'sulit', text: '阅读以下段落：\n"生物多样性是一个地区生物的多样性。生物多样性越高，生态系统越稳定，因为每个物种都有自己的作用。"\n\n为什么高生物多样性使生态系统稳定？', answers: { A: '因为所有物种都一样', B: '因为每个物种都有自己的作用', C: '因为动物很多', D: '因为地区很大' }, correct: 'B', explanation: '生态系统的稳定性发生是因为每个物种都有互补的作用。' },
+        15: { kategori: 'numerasi', level: 'mudah', text: '一个太阳能电池板每天可以产生4千瓦时的电力。如果学校有5个太阳能电池板，每天总共产生多少电力？', answers: { A: '9千瓦时', B: '16千瓦时', C: '20千瓦时', D: '24千瓦时' }, correct: 'C', explanation: '4千瓦时 × 5个 = 每天20千瓦时。' },
+        16: { kategori: 'bernalar', level: 'sedang', text: '一所学校想实施"零废弃"。他们有3个选择：\n(1) 购买新垃圾桶\n(2) 举办无垃圾班级比赛\n(3) 要求学生自带水瓶\n\n哪个选择最支持零废弃？', answers: { A: '只有选择1', B: '选择2和3', C: '只有选择3', D: '所有选择都一样好' }, correct: 'B', explanation: '零废弃意味着从源头防止垃圾。' },
+        17: { kategori: 'numerasi', level: 'sulit', text: '一个漏水的水龙头每秒滴5毫升水。1小时内浪费多少升水？（1升 = 1,000毫升）', answers: { A: '9升', B: '12升', C: '18升', D: '20升' }, correct: 'C', explanation: '1小时 = 3,600秒。5毫升 × 3,600 = 18,000毫升 = 18升。' },
+        18: { kategori: 'bernalar', level: 'mudah', text: '每天早上7A班在阳光明媚时打开窗户并关灯。\n\n这个习惯的主要好处是什么？', answers: { A: '使教室更暗', B: '节约电能并利用自然光', C: '使学生困倦', D: '增加电费' }, correct: 'B', explanation: '利用阳光 = 节约电能。' },
+        19: { kategori: 'literasi', level: 'sedang', text: '阅读以下句子：\n"学校环境中的鸟类越来越少见，因为许多树木被砍伐用于扩建停车场。"\n\n句子中的因果关系是什么？', answers: { A: '鸟类因炎热天气消失', B: '砍伐树木导致鸟类失去栖息地', C: '鸟类因为喜欢新地方而搬走', D: '停车场使鸟类快乐' }, correct: 'B', explanation: '原因：砍伐树木。结果：鸟类失去栖息地。' },
+        20: { kategori: 'numerasi', level: 'mudah', text: '一个风力发电机每天产生30千瓦时的电力。如果1个家庭每天需要3千瓦时，可以服务多少个家庭？', answers: { A: '5个家庭', B: '8个家庭', C: '10个家庭', D: '15个家庭' }, correct: 'C', explanation: '30千瓦时 ÷ 3千瓦时每个家庭 = 10个家庭。' },
+        21: { kategori: 'bernalar', level: 'sedang', text: '一所学校正在考虑将汽油动力班车替换为电动汽车。\n\n决定前最合适的考虑是什么？', answers: { A: '电动汽车更贵，所以不需要', B: '比较成本、环境影响和基础设施可用性', C: '汽油车更快，所以选择汽油', D: '跟随其他学校' }, correct: 'B', explanation: '好的决策要考虑多个方面。' },
+        22: { kategori: 'literasi', level: 'sulit', text: '阅读以下段落：\n"碳足迹是人类活动产生的温室气体总量，无论是直接还是间接。一个人的碳足迹越高，对全球变暖的贡献就越大。"\n\n什么是碳足迹？', answers: { A: '地上的鞋印', B: '人类活动产生的温室气体总量', C: '动物足迹', D: '鞋品牌名称' }, correct: 'B', explanation: '碳足迹 = 人类活动产生的温室气体总量。' },
+        23: { kategori: 'bernalar', level: 'sulit', text: '一所学校想建造新大楼。有2个选择：\n(A) 砍伐院子里的50棵树\n(B) 利用空置的前停车场\n\n哪个选择符合可持续发展原则？', answers: { A: '选择A因为更快', B: '选择B因为保留树木并利用现有土地', C: '选择A因为树可以重新种植', D: '两者一样' }, correct: 'B', explanation: '可持续发展意味着满足需求而不牺牲环境。' }
+    },
+    ko: {
+        1: { kategori: 'literasi', level: 'mudah', text: '다음 문장을 읽으세요:\n"매일 아침, 리나는 종이 울리기 전에 교실 앞 화단에 물을 줍니다."\n\n리나는 매일 아침 무엇을 하나요?', answers: { A: '교실 앞 화단에 물을 준다', B: '도서관에서 책을 읽는다', C: '운동장에서 논다', D: '교실을 청소한다' }, correct: 'A', explanation: 'A가 정답인 이유는 문장에 "리나는 교실 앞 화단에 물을 줍니다"라고 명확히 쓰여 있기 때문입니다.' },
+        2: { kategori: 'numerasi', level: 'mudah', text: '학교 정원에 24그루의 묘목이 있습니다. 1/3이 심어졌습니다. 심지 않은 묘목은 몇 그루입니까?', answers: { A: '8그루', B: '12그루', C: '16그루', D: '18그루' }, correct: 'C', explanation: '심은 것 = 1/3 × 24 = 8. 심지 않은 것 = 24 − 8 = 16그루.' },
+        3: { kategori: 'bernalar', level: 'mudah', text: '매일 아침 안디는 운동장에 흩어진 비닐 쓰레기를 봅니다. 그는 이것을 해결하고 싶어합니다.\n\n안디가 취해야 할 가장 적절한 행동은?', answers: { A: '자기 일이 아니니 무시한다', B: '친구들을 초대해 분리수거함과 홍보 포스터를 만든다', C: '청소 담당자를 탓한다', D: '운동장에서 쓰레기를 태운다' }, correct: 'B', explanation: '최선의 해결책은 예방적이고 협력적인 행동입니다.' },
+        4: { kategori: 'literasi', level: 'mudah', text: '다음 글을 읽으세요:\n"아디위야타는 환경을 생각하는 학교 프로그램입니다. 아디위야타 칭호를 받은 학교는 청결을 유지하고, 나무를 심고, 에너지를 절약해야 합니다."\n\n글에 따르면 아디위야타 학교의 요건은 무엇입니까?', answers: { A: '학생이 많아야 한다', B: '청결 유지, 나무 심기, 에너지 절약', C: '운동 기구 구입', D: '수업 시간 추가' }, correct: 'B', explanation: '글에 따르면 요건은 청결 유지, 나무 심기, 에너지 절약입니다.' },
+        5: { kategori: 'numerasi', level: 'mudah', text: '한 반이 5일 동안 15kg의 비닐 쓰레기를 모았습니다. 매일 같은 양이라면 하루에 몇 kg을 모았습니까?', answers: { A: '2kg', B: '3kg', C: '4kg', D: '5kg' }, correct: 'B', explanation: '15kg ÷ 5일 = 하루 3kg.' },
+        6: { kategori: 'bernalar', level: 'mudah', text: '학교 매점에서 많은 학생이 일회용 비닐 포장 음식을 삽니다. 비닐 쓰레기가 매일 쌓입니다.\n\n이 문제를 줄이기 위한 가장 효과적인 전략은...', answers: { A: '학생들의 매점 이용 금지', B: '쓰레기통 더 많이 제공', C: '학생들이 텀블러와 도시락을 가져오도록 의무화', D: '학교 매점 폐쇄' }, correct: 'C', explanation: '장기적 해결책은 쓰레기 발생을 근원에서 막는 것입니다.' },
+        7: { kategori: 'literasi', level: 'mudah', text: '다음 문장을 보세요:\n"건강한 집은 항상 환기가 잘 되어 신선한 공기가 들어오고 더러운 공기가 나갈 수 있습니다."\n\n환기의 기능은 무엇입니까?', answers: { A: '집 장식', B: '신선한 공기를 들이고 더러운 공기를 내보냄', C: '물건 보관 장소', D: '창문 닫기' }, correct: 'B', explanation: '환기의 주된 기능은 공기 순환입니다.' },
+        8: { kategori: 'bernalar', level: 'sulit', text: '공장 근처의 강이 검게 변하고 많은 물고기가 죽었습니다. 주민들이 피부병에 걸리기 시작했습니다.\n\n이 문제의 원인에 대한 가장 논리적인 분석은...', answers: { A: '추운 날씨 때문에 물고기가 죽었다', B: '비타민 부족으로 주민이 병에 걸렸다', C: '공장 폐수가 강에 버려져 물을 오염시켰다', D: '강에 물이 부족하다' }, correct: 'C', explanation: '처리 없이 버려진 공장 폐수가 물을 오염시킵니다.' },
+        9: { kategori: 'numerasi', level: 'sedang', text: '한 학교가 하루에 60kg의 쓰레기를 배출합니다. 40%는 유기 쓰레기, 35%는 비닐, 나머지는 종이입니다.\n\n하루에 종이 쓰레기는 몇 kg입니까?', answers: { A: '10kg', B: '12kg', C: '15kg', D: '18kg' }, correct: 'C', explanation: '유기 40% + 비닐 35% = 75%. 종이 = 25%. 25% × 60 = 15kg.' },
+        10: { kategori: 'literasi', level: 'mudah', text: '다음 문장을 읽으세요:\n"자전거를 타고 학교에 가는 것은 몸을 건강하게 할 뿐만 아니라 대기 오염도 줄입니다."\n\n문장에 따르면 자전거 통학의 두 가지 이점은 무엇입니까?', answers: { A: '돈을 아끼고 빨리 도착', B: '몸이 건강해지고 오염이 줄어든다', C: '피곤해지고 휘발유를 아낀다', D: '친구가 늘고 저렴하다' }, correct: 'B', explanation: '글에는 두 가지 이점이 언급됩니다: 건강한 몸과 오염 감소.' },
+        11: { kategori: 'bernalar', level: 'sulit', text: '지구의 평균 기온이 매년 계속 상승하고 있습니다. 극지방의 얼음이 녹고, 해수면이 상승하고, 날씨가 극단적으로 변합니다.\n\n이 현상에 대한 가장 적절한 결론은...', answers: { A: '지구가 빙하기에 들어가고 있다', B: '온실 효과로 인한 지구 온난화가 발생하고 있다', C: '지구가 자전을 멈췄다', D: '태양이 지구에 가까워지고 있다' }, correct: 'B', explanation: '지구 기온 상승, 얼음 녹음, 극단적 날씨는 지구 온난화의 증상입니다.' },
+        12: { kategori: 'literasi', level: 'mudah', text: '다음 글을 읽으세요:\n"숲은 지구의 허파입니다. 숲은 이산화탄소를 흡수하고 우리가 숨 쉬는 산소를 생산합니다."\n\n글에서 숲의 별명은 무엇입니까?', answers: { A: '지구의 심장', B: '지구의 허파', C: '지구의 신장', D: '지구의 뇌' }, correct: 'B', explanation: '글에서는 숲을 "지구의 허파"라고 부릅니다.' },
+        13: { kategori: 'bernalar', level: 'sedang', text: 'A학교와 B학교 모두 하루에 50kg의 비닐 쓰레기를 배출합니다. A학교는 80%를 재활용하고, B학교는 20%만 재활용합니다.\n\n가장 적절한 결론은...', answers: { A: 'A학교가 비닐 쓰레기 관리에서 더 낫다', B: 'B학교가 더 경제적이다', C: '둘 다 똑같이 좋다', D: 'B학교가 환경을 더 생각한다' }, correct: 'A', explanation: 'A학교는 80%(40kg)를 재활용하고, B는 20%(10kg)만 재활용합니다.' },
+        14: { kategori: 'literasi', level: 'sulit', text: '다음 단락을 읽으세요:\n"생물 다양성은 한 지역의 생물 종류의 다양성입니다. 생물 다양성이 높을수록 각 종이 각자의 역할을 하기 때문에 생태계가 더 안정적입니다."\n\n왜 높은 생물 다양성이 생태계를 안정적으로 만듭니까?', answers: { A: '모든 종이 같기 때문에', B: '각 종이 각자의 역할을 하기 때문에', C: '동물이 많기 때문에', D: '지역이 넓기 때문에' }, correct: 'B', explanation: '생태계 안정성은 각 종이 상호 보완적인 역할을 하기 때문에 발생합니다.' },
+        15: { kategori: 'numerasi', level: 'mudah', text: '태양광 패널 하나가 하루에 4kWh의 전기를 생산합니다. 학교에 5개의 태양광 패널이 있다면 하루에 총 몇 kWh를 생산합니까?', answers: { A: '9kWh', B: '16kWh', C: '20kWh', D: '24kWh' }, correct: 'C', explanation: '4kWh × 5개 = 하루 20kWh.' },
+        16: { kategori: 'bernalar', level: 'sedang', text: '한 학교가 "제로 웨이스트"를 시행하려 합니다. 3가지 선택이 있습니다:\n(1) 새 쓰레기통 구입\n(2) 쓰레기 없는 반 경연대회 개최\n(3) 학생들이 개인 물병을 가져오도록 의무화\n\n어떤 선택이 제로 웨이스트를 가장 잘 지원합니까?', answers: { A: '선택 1만', B: '선택 2와 3', C: '선택 3만', D: '모든 선택이 똑같이 좋다' }, correct: 'B', explanation: '제로 웨이스트는 쓰레기를 근원에서 막는 것을 의미합니다.' },
+        17: { kategori: 'numerasi', level: 'sulit', text: '새는 수도꼭지가 초당 5ml의 물을 떨어뜨립니다. 1시간 동안 몇 리터의 물이 낭비됩니까? (1리터 = 1,000ml)', answers: { A: '9리터', B: '12리터', C: '18리터', D: '20리터' }, correct: 'C', explanation: '1시간 = 3,600초. 5ml × 3,600 = 18,000ml = 18리터.' },
+        18: { kategori: 'bernalar', level: 'mudah', text: '매일 아침 7A반은 햇빛이 밝을 때 창문을 열고 불을 끕니다.\n\n이 습관의 주된 이점은 무엇입니까?', answers: { A: '교실을 더 어둡게 만든다', B: '전기를 절약하고 자연광을 이용한다', C: '학생들을 졸리게 만든다', D: '전기 요금을 늘린다' }, correct: 'B', explanation: '햇빛 이용 = 전기 절약.' },
+        19: { kategori: 'literasi', level: 'sedang', text: '다음 문장을 읽으세요:\n"주차장 확장을 위해 많은 나무가 베어져 학교 환경의 새들이 점점 보기 드물어지고 있습니다."\n\n문장의 인과 관계는 무엇입니까?', answers: { A: '더운 날씨 때문에 새가 사라졌다', B: '나무를 베어 새들이 서식지를 잃었다', C: '새들이 새 장소를 좋아해서 이사했다', D: '주차장이 새들을 행복하게 한다' }, correct: 'B', explanation: '원인: 나무 벌목. 결과: 새들이 서식지를 잃음.' },
+        20: { kategori: 'numerasi', level: 'mudah', text: '풍력 터빈 하나가 하루에 30kWh의 전기를 생산합니다. 1가구가 하루에 3kWh를 필요로 한다면 몇 가구에 공급할 수 있습니까?', answers: { A: '5가구', B: '8가구', C: '10가구', D: '15가구' }, correct: 'C', explanation: '30kWh ÷ 3kWh = 10가구.' },
+        21: { kategori: 'bernalar', level: 'sedang', text: '한 학교가 휘발유 셔틀을 전기차로 교체하는 것을 고려하고 있습니다.\n\n결정 전 가장 적절한 고려 사항은?', answers: { A: '전기차가 더 비싸니 필요 없다', B: '비용, 환경 영향, 인프라 가용성 비교', C: '휘발유차가 더 빠르니 휘발유 선택', D: '다른 학교를 따라한다' }, correct: 'B', explanation: '좋은 결정은 여러 측면을 고려합니다.' },
+        22: { kategori: 'literasi', level: 'sulit', text: '다음 단락을 읽으세요:\n"탄소 발자국은 인간 활동에서 직접 또는 간접적으로 발생하는 온실가스 총량입니다. 탄소 발자국이 높을수록 지구 온난화에 더 많이 기여합니다."\n\n탄소 발자국이란 무엇입니까?', answers: { A: '땅에 남은 신발 자국', B: '인간 활동으로 인한 온실가스 총량', C: '동물 발자국', D: '신발 브랜드 이름' }, correct: 'B', explanation: '탄소 발자국 = 인간 활동으로 인한 온실가스 총량.' },
+        23: { kategori: 'bernalar', level: 'sulit', text: '한 학교가 새 건물을 짓고 싶어합니다. 2가지 선택이 있습니다:\n(A) 마당의 나무 50그루 벌목\n(B) 빈 주차장 부지 활용\n\n어떤 선택이 지속 가능한 개발 원칙에 부합합니까?', answers: { A: '더 빠르니까 선택 A', B: '나무를 보존하고 기존 부지를 활용하므로 선택 B', C: '나무를 다시 심을 수 있으니 선택 A', D: '둘 다 같다' }, correct: 'B', explanation: '지속 가능한 개발은 환경을 희생하지 않고 필요를 충족하는 것을 의미합니다.' }
+    },
+    ja: {
+        1: { kategori: 'literasi', level: 'mudah', text: '次の文を読みなさい：\n"毎朝、リナはベルが鳴る前に教室の前の植物に水をやります。"\n\nリナは毎朝何をしますか？', answers: { A: '教室の前の植物に水をやる', B: '図書館で本を読む', C: '校庭で遊ぶ', D: '教室を掃除する' }, correct: 'A', explanation: '答えAが正しいのは、文に「リナは教室の前の植物に水をやります」とはっきり書かれているからです。' },
+        2: { kategori: 'numerasi', level: 'mudah', text: '学校の庭に24本の苗木があります。1/3が植えられました。植えられていない苗木は何本ですか？', answers: { A: '8本', B: '12本', C: '16本', D: '18本' }, correct: 'C', explanation: '植えた = 1/3 × 24 = 8。植えていない = 24 − 8 = 16本。' },
+        3: { kategori: 'bernalar', level: 'mudah', text: '毎朝アンディは校庭に散らばったプラスチックごみを見ます。彼はそれを解決したいと思っています。\n\nアンディが取るべき最も適切な行動は？', answers: { A: '自分の仕事ではないので無視する', B: '友達を誘って分別ゴミ箱と啓発ポスターを作る', C: '清掃員を責める', D: '校庭でごみを燃やす' }, correct: 'B', explanation: '最善の解決策は予防的で協力的な行動です。' },
+        4: { kategori: 'literasi', level: 'mudah', text: '次の文章を読みなさい：\n"アディウィヤタは環境を思いやる学校プログラムです。アディウィヤタの称号を得た学校は、清潔を保ち、木を植え、エネルギーを節約しなければなりません。"\n\n文章によると、アディウィヤタ学校の要件は何ですか？', answers: { A: '生徒が多いこと', B: '清潔を保ち、木を植え、エネルギーを節約すること', C: 'スポーツ用具を買うこと', D: '授業時間を増やすこと' }, correct: 'B', explanation: '文章によると、要件は清潔を保ち、木を植え、エネルギーを節約することです。' },
+        5: { kategori: 'numerasi', level: 'mudah', text: 'あるクラスが5日間で15kgのプラスチックごみを集めました。毎日同じ量なら、1日あたり何kg集めましたか？', answers: { A: '2kg', B: '3kg', C: '4kg', D: '5kg' }, correct: 'B', explanation: '15kg ÷ 5日 = 1日3kg。' },
+        6: { kategori: 'bernalar', level: 'mudah', text: '学校の食堂で、多くの生徒が使い捨てプラスチック包装の食べ物を買います。プラスチックごみが毎日積み上がります。\n\nこの問題を減らす最も効果的な戦略は...', answers: { A: '生徒の食堂利用を禁止する', B: 'ゴミ箱を増やす', C: '生徒にタンブラーと弁当箱を持参させる', D: '学校の食堂を閉鎖する' }, correct: 'C', explanation: '長期的な解決策は、ごみの発生を根源から防ぐことです。' },
+        7: { kategori: 'literasi', level: 'mudah', text: '次の文を見なさい：\n"健康的な家は常に換気が良く、新鮮な空気が入り、汚れた空気が出ていきます。"\n\n換気の機能は何ですか？', answers: { A: '家の装飾', B: '新鮮な空気を入れ、汚れた空気を出す', C: '物を保管する場所', D: '窓を閉める' }, correct: 'B', explanation: '換気の主な機能は空気の循環です。' },
+        8: { kategori: 'bernalar', level: 'sulit', text: '工場近くの川が黒くなり、多くの魚が死にました。周辺住民が皮膚病になり始めました。\n\nこの問題の原因の最も論理的な分析は...', answers: { A: '寒い天候で魚が死んだ', B: 'ビタミン不足で住民が病気になった', C: '工場廃液が川に捨てられ水を汚染した', D: '川の水が不足している' }, correct: 'C', explanation: '処理されずに捨てられた工場廃液が水を汚染します。' },
+        9: { kategori: 'numerasi', level: 'sedang', text: 'ある学校が1日に60kgのごみを出します。40%は有機ごみ、35%はプラスチック、残りは紙です。\n\n1日の紙ごみは何kgですか？', answers: { A: '10kg', B: '12kg', C: '15kg', D: '18kg' }, correct: 'C', explanation: '有機40% + プラ35% = 75%。紙 = 25%。25% × 60 = 15kg。' },
+        10: { kategori: 'literasi', level: 'mudah', text: '次の文を読みなさい：\n"自転車で学校に行くことは体を健康にするだけでなく、大気汚染も減らします。"\n\n文によると、自転車通学の2つの利点は何ですか？', answers: { A: 'お金を節約し速く着く', B: '体が健康になり汚染が減る', C: '疲れてガソリンを節約', D: '友達が増えて安い' }, correct: 'B', explanation: '文章には2つの利点が述べられています：健康な体と汚染の減少。' },
+        11: { kategori: 'bernalar', level: 'sulit', text: '地球の平均気温は毎年上昇し続けています。極地の氷が溶け、海面が上昇し、天候が極端になっています。\n\nこの現象から最も適切な結論は...', answers: { A: '地球は氷河期に入っている', B: '温室効果による地球温暖化が起こっている', C: '地球が回転を止めた', D: '太陽が地球に近づいている' }, correct: 'B', explanation: '地球の気温上昇、氷の融解、極端な天候は地球温暖化の症状です。' },
+        12: { kategori: 'literasi', level: 'mudah', text: '次の文章を読みなさい：\n"森林は世界の肺です。森林は二酸化炭素を吸収し、私たちが呼吸する酸素を生産します。"\n\n文章で森林の愛称は何ですか？', answers: { A: '世界の心臓', B: '世界の肺', C: '世界の腎臓', D: '世界の脳' }, correct: 'B', explanation: '文章では森林を「世界の肺」と呼んでいます。' },
+        13: { kategori: 'bernalar', level: 'sedang', text: 'A学校とB学校はどちらも1日に50kgのプラスチックごみを出します。A学校は80%をリサイクルし、B学校は20%だけです。\n\n最も適切な結論は...', answers: { A: 'A学校の方がプラスチックごみ管理が優れている', B: 'B学校の方が経済的', C: '両方とも同じくらい良い', D: 'B学校の方が環境を気にかけている' }, correct: 'A', explanation: 'A学校は80%（40kg）をリサイクルし、Bは20%（10kg）だけです。' },
+        14: { kategori: 'literasi', level: 'sulit', text: '次の段落を読みなさい：\n"生物多様性とは、ある地域の生物の多様性です。生物多様性が高いほど、各種がそれぞれの役割を持つため、生態系はより安定します。"\n\nなぜ高い生物多様性が生態系を安定させるのですか？', answers: { A: 'すべての種が同じだから', B: '各種がそれぞれの役割を持つから', C: '動物が多いから', D: '地域が広いから' }, correct: 'B', explanation: '生態系の安定は、各種が補完的な役割を持つことによって生じます。' },
+        15: { kategori: 'numerasi', level: 'mudah', text: '太陽光パネル1枚で1日に4kWhの発電ができます。学校に5枚の太陽光パネルがあれば、1日に合計何kWh発電しますか？', answers: { A: '9kWh', B: '16kWh', C: '20kWh', D: '24kWh' }, correct: 'C', explanation: '4kWh × 5枚 = 1日20kWh。' },
+        16: { kategori: 'bernalar', level: 'sedang', text: 'ある学校が「ゼロウェイスト」を実施しようとしています。3つの選択肢があります：\n(1) 新しいゴミ箱を買う\n(2) ごみのないクラスコンテストを開催する\n(3) 生徒にマイボトルを持参させる\n\nどの選択肢がゼロウェイストを最も支持しますか？', answers: { A: '選択肢1のみ', B: '選択肢2と3', C: '選択肢3のみ', D: 'すべて同じくらい良い' }, correct: 'B', explanation: 'ゼロウェイストとは、ごみを根源から防ぐことです。' },
+        17: { kategori: 'numerasi', level: 'sulit', text: '漏れている蛇口が1秒に5mlの水を垂らします。1時間で何リットルの水が無駄になりますか？（1リットル = 1,000ml）', answers: { A: '9リットル', B: '12リットル', C: '18リットル', D: '20リットル' }, correct: 'C', explanation: '1時間 = 3,600秒。5ml × 3,600 = 18,000ml = 18リットル。' },
+        18: { kategori: 'bernalar', level: 'mudah', text: '毎朝7Aクラスは日が明るいときに窓を開け、電気を消します。\n\nこの習慣の主な利点は何ですか？', answers: { A: '教室を暗くする', B: '電気を節約し自然光を利用する', C: '生徒を眠くする', D: '電気代を増やす' }, correct: 'B', explanation: '日光を利用 = 電気の節約。' },
+        19: { kategori: 'literasi', level: 'sedang', text: '次の文を読みなさい：\n"駐車場拡張のために多くの木が伐採され、学校環境の鳥がまれに見られるようになりました。"\n\n文の因果関係は何ですか？', answers: { A: '暑い天候で鳥が消えた', B: '木を伐採したため鳥が生息地を失った', C: '鳥が新しい場所を好んで引っ越した', D: '駐車場が鳥を幸せにした' }, correct: 'B', explanation: '原因：木の伐採。結果：鳥が生息地を失う。' },
+        20: { kategori: 'numerasi', level: 'mudah', text: '風力タービン1基で1日に30kWhの発電ができます。1世帯が1日に3kWh必要なら、何世帯に供給できますか？', answers: { A: '5世帯', B: '8世帯', C: '10世帯', D: '15世帯' }, correct: 'C', explanation: '30kWh ÷ 3kWh = 10世帯。' },
+        21: { kategori: 'bernalar', level: 'sedang', text: 'ある学校がガソリンシャトルを電気自動車に替えることを検討しています。\n\n決定前の最も適切な考慮事項は？', answers: { A: '電気自動車は高いので不要', B: 'コスト、環境影響、インフラの可用性を比較する', C: 'ガソリン車の方が速いのでガソリンを選ぶ', D: '他の学校を真似する' }, correct: 'B', explanation: '良い決定は複数の側面を考慮します。' },
+        22: { kategori: 'literasi', level: 'sulit', text: '次の段落を読みなさい：\n"カーボンフットプリントとは、人間活動から直接的・間接的に発生する温室効果ガスの総量です。カーボンフットプリントが高いほど、地球温暖化への寄与が大きくなります。"\n\nカーボンフットプリントとは何ですか？', answers: { A: '地面についた靴の跡', B: '人間活動による温室効果ガスの総量', C: '動物の足跡', D: '靴のブランド名' }, correct: 'B', explanation: 'カーボンフットプリント = 人間活動による温室効果ガスの総量。' },
+        23: { kategori: 'bernalar', level: 'sulit', text: 'ある学校が新しい建物を建てたいと考えています。2つの選択肢があります：\n(A) 庭の木を50本伐採する\n(B) 空いた元駐車場を利用する\n\nどちらの選択肢が持続可能な開発の原則に沿っていますか？', answers: { A: '速いので選択肢A', B: '木を保存し既存の土地を利用するので選択肢B', C: '木は植え直せるので選択肢A', D: 'どちらも同じ' }, correct: 'B', explanation: '持続可能な開発とは、環境を犠牲にせずにニーズを満たすことです。' }
+    },
+    ar: {
+        1: { kategori: 'literasi', level: 'mudah', text: 'اقرأ الجملة التالية:\n"كل صباح، تسقي رينا النباتات أمام الفصل قبل أن يرن الجرس."\n\nماذا تفعل رينا كل صباح؟', answers: { A: 'تسقي النباتات أمام الفصل', B: 'تقرأ الكتب في المكتبة', C: 'تلعب في ساحة المدرسة', D: 'تكنس الفصل' }, correct: 'A', explanation: 'الإجابة A صحيحة لأن الجملة تقول بوضوح "رينا تسقي النباتات أمام الفصل".' },
+        2: { kategori: 'numerasi', level: 'mudah', text: 'في حديقة المدرسة 24 شتلة شجرة. تم زراعة 1/3 من الشتلات. كم شتلة لم تُزرع؟', answers: { A: '8 شتلات', B: '12 شتلة', C: '16 شتلة', D: '18 شتلة' }, correct: 'C', explanation: 'المزروع = 1/3 × 24 = 8. غير المزروع = 24 − 8 = 16 شتلة.' },
+        3: { kategori: 'bernalar', level: 'mudah', text: 'كل صباح يرى أندي نفايات بلاستيكية متناثرة في ساحة المدرسة. يريد حلها.\n\nما هو الإجراء الأنسب الذي يجب أن يتخذه أندي؟', answers: { A: 'يتجاهلها لأنها ليست وظيفته', B: 'يدعو الأصدقاء لصنع حاويات فرز وملصقات توعية', C: 'يلوم عمال النظافة', D: 'يحرق النفايات في الساحة' }, correct: 'B', explanation: 'أفضل حل هو العمل الوقائي والتعاوني.' },
+        4: { kategori: 'literasi', level: 'mudah', text: 'اقرأ النص التالي:\n"أديويايا هو برنامج مدرسي يهتم بالبيئة. المدارس التي تحصل على لقب أديويايا يجب أن تحافظ على النظافة وتزرع الأشجار وتوفر الطاقة."\n\nما هي متطلبات مدرسة أديويايا حسب النص؟', answers: { A: 'لديها طلاب كثيرون', B: 'الحفاظ على النظافة وزرع الأشجار وتوفير الطاقة', C: 'شراء معدات رياضية', D: 'إضافة ساعات دراسية' }, correct: 'B', explanation: 'حسب النص، المتطلبات هي الحفاظ على النظافة وزرع الأشجار وتوفير الطاقة.' },
+        5: { kategori: 'numerasi', level: 'mudah', text: 'جمع فصل 15 كجم من النفايات البلاستيكية في 5 أيام. إذا كانت الكمية نفسها كل يوم، كم كجم يتم جمعها يومياً؟', answers: { A: '2 كجم', B: '3 كجم', C: '4 كجم', D: '5 كجم' }, correct: 'B', explanation: '15 كجم ÷ 5 أيام = 3 كجم يومياً.' },
+        6: { kategori: 'bernalar', level: 'mudah', text: 'في مقصف المدرسة، يشتري كثير من الطلاب طعاماً في عبوات بلاستيكية لمرة واحدة. تتراكم النفايات البلاستيكية كل يوم.\n\nأكثر استراتيجية فعالية لتقليل هذه المشكلة هي...', answers: { A: 'منع الطلاب من الشراء', B: 'توفير المزيد من حاويات القمامة', C: 'إلزام الطلاب بإحضار أكواب وحاويات طعام خاصة', D: 'إغلاق مقصف المدرسة' }, correct: 'C', explanation: 'الحل طويل الأمد هو منع النفايات من المصدر.' },
+        7: { kategori: 'literasi', level: 'mudah', text: 'انظر إلى الجملة التالية:\n"البيت الصحي دائماً لديه تهوية جيدة، حتى يدخل الهواء النقي ويخرج الهواء الملوث."\n\nما وظيفة التهوية؟', answers: { A: 'كزينة للمنزل', B: 'إدخال الهواء النقي وإخراج الهواء الملوث', C: 'مكان لتخزين الأشياء', D: 'إغلاق النوافذ' }, correct: 'B', explanation: 'الوظيفة الرئيسية للتهوية هي دوران الهواء.' },
+        8: { kategori: 'bernalar', level: 'sulit', text: 'نهر قرب مصنع تحول لونه إلى الأسود ومات كثير من الأسماك. بدأ السكان المجاورون يعانون من أمراض جلدية.\n\nالتحليل الأكثر منطقية لسبب هذه المشكلة هو...', answers: { A: 'ماتت الأسماك بسبب الطقس البارد', B: 'مرض السكان بسبب نقص الفيتامينات', C: 'نفايات المصنع التي أُلقيت في النهر لوثت الماء', D: 'النهر يفتقر إلى الماء' }, correct: 'C', explanation: 'نفايات المصنع التي تُلقى دون معالجة تلوث الماء.' },
+        9: { kategori: 'numerasi', level: 'sedang', text: 'تنتج مدرسة 60 كجم من النفايات يومياً. 40% نفايات عضوية، 35% بلاستيك، والباقي ورق.\n\nكم كجم من نفايات الورق يومياً؟', answers: { A: '10 كجم', B: '12 كجم', C: '15 كجم', D: '18 كجم' }, correct: 'C', explanation: 'عضوي 40% + بلاستيك 35% = 75%. الورق = 25%. 25% × 60 = 15 كجم.' },
+        10: { kategori: 'literasi', level: 'mudah', text: 'اقرأ الجملة التالية:\n"الدراجة إلى المدرسة لا تجعل الجسم صحيحاً فحسب، بل تقلل أيضاً من تلوث الهواء."\n\nما فائدتا الدراجة إلى المدرسة حسب الجملة؟', answers: { A: 'توفير المال والوصول بسرعة', B: 'جسم صحيح وتقليل التلوث', C: 'التعب وتوفير البنزين', D: 'المزيد من الأصدقاء والرخيصة' }, correct: 'B', explanation: 'النص يذكر فائدتين: الجسم الصحيح وتقليل التلوث.' },
+        11: { kategori: 'bernalar', level: 'sulit', text: 'متوسط درجة حرارة الأرض يستمر في الارتفاع كل عام. الجليد القطبي يذوب، مستوى البحر يرتفع، والطقس يصبح متطرفاً.\n\nالاستنتاج الأنسب من هذه الظاهرة هو...', answers: { A: 'الأرض تدخل عصراً جليدياً', B: 'يحدث الاحتباس الحراري بسبب تأثير الدفيئة', C: 'الأرض توقفت عن الدوران', D: 'الشمس تقترب من الأرض' }, correct: 'B', explanation: 'ارتفاع درجة الحرارة العالمية وذوبان الجليد والطقس المتطرف هي أعراض الاحتباس الحراري.' },
+        12: { kategori: 'literasi', level: 'mudah', text: 'اقرأ النص التالي:\n"الغابات هي رئة العالم. تمتص الغابات ثاني أكسيد الكربون وتنتج الأكسجين الذي نتنفسه."\n\nما هو لقب الغابات في النص؟', answers: { A: 'قلب العالم', B: 'رئة العالم', C: 'كلى العالم', D: 'دماغ العالم' }, correct: 'B', explanation: 'النص يسمي الغابات "رئة العالم".' },
+        13: { kategori: 'bernalar', level: 'sedang', text: 'المدرسة A والمدرسة B تنتجان 50 كجم من النفايات البلاستيكية يومياً. المدرسة A تعيد تدوير 80% من نفاياتها، بينما المدرسة B فقط 20%.\n\nالاستنتاج الأنسب هو...', answers: { A: 'المدرسة A أفضل في إدارة النفايات البلاستيكية', B: 'المدرسة B أكثر اقتصاداً', C: 'كلتاهما جيدتان بالتساوي', D: 'المدرسة B أكثر اهتماماً بالبيئة' }, correct: 'A', explanation: 'المدرسة A تعيد تدوير 80% (40 كجم)، بينما B فقط 20% (10 كجم).' },
+        14: { kategori: 'literasi', level: 'sulit', text: 'اقرأ الفقرة التالية:\n"التنوع الحيوي هو تنوع الكائنات الحية في منطقة ما. كلما زاد التنوع الحيوي، زاد استقرار النظام البيئي لأن لكل نوع دوره الخاص."\n\nلماذا يجعل التنوع الحيوي العالي النظام البيئي مستقراً؟', answers: { A: 'لأن جميع الأنواع متشابهة', B: 'لأن لكل نوع دوره الخاص', C: 'لأن عدد الحيوانات كثير', D: 'لأن المنطقة واسعة' }, correct: 'B', explanation: 'استقرار النظام البيئي يحدث لأن لكل نوع دوراً تكميلياً.' },
+        15: { kategori: 'numerasi', level: 'mudah', text: 'لوح شمسي واحد يمكنه إنتاج 4 كيلوواط ساعة من الكهرباء يومياً. إذا كانت المدرسة لديها 5 ألواح شمسية، فكم إجمالي الكهرباء المنتجة يومياً؟', answers: { A: '9 كيلوواط ساعة', B: '16 كيلوواط ساعة', C: '20 كيلوواط ساعة', D: '24 كيلوواط ساعة' }, correct: 'C', explanation: '4 كيلوواط ساعة × 5 ألواح = 20 كيلوواط ساعة يومياً.' },
+        16: { kategori: 'bernalar', level: 'sedang', text: 'تريد مدرسة تطبيق "صفر نفايات". لديها 3 خيارات:\n(1) شراء حاويات قمامة جديدة\n(2) إقامة مسابقة فصل بلا نفايات\n(3) إلزام الطلاب بإحضار زجاجات ماء خاصة\n\nأي خيار يدعم صفر نفايات بشكل أفضل؟', answers: { A: 'الخيار 1 فقط', B: 'الخياران 2 و 3', C: 'الخيار 3 فقط', D: 'جميع الخيارات جيدة بالتساوي' }, correct: 'B', explanation: 'صفر نفايات يعني منع النفايات من المصدر.' },
+        17: { kategori: 'numerasi', level: 'sulit', text: 'صنبور ماء يقطر 5 مل من الماء في الثانية. كم لتراً من الماء يُهدر في ساعة واحدة؟ (1 لتر = 1,000 مل)', answers: { A: '9 لترات', B: '12 لتراً', C: '18 لتراً', D: '20 لتراً' }, correct: 'C', explanation: 'ساعة واحدة = 3,600 ثانية. 5 مل × 3,600 = 18,000 مل = 18 لتراً.' },
+        18: { kategori: 'bernalar', level: 'mudah', text: 'كل صباح يفتح فصل 7A النوافذ ويطفئ الأنوار عندما تكون الشمس ساطعة.\n\nما الفائدة الرئيسية من هذه العادة؟', answers: { A: 'جعل الفصل أكثر ظلاماً', B: 'توفير الطاقة الكهربائية واستخدام الضوء الطبيعي', C: 'جعل الطلاب يشعرون بالنعاس', D: 'زيادة فاتورة الكهرباء' }, correct: 'B', explanation: 'استخدام ضوء الشمس = توفير الطاقة الكهربائية.' },
+        19: { kategori: 'literasi', level: 'sedang', text: 'اقرأ الجملة التالية:\n"الطيور في بيئة المدرسة أصبحت نادرة لأن كثيراً من الأشجار قُطعت لتوسيع مواقف السيارات."\n\nما علاقة السبب والنتيجة في الجملة؟', answers: { A: 'اختفت الطيور بسبب الطقس الحار', B: 'قطع الأشجار جعل الطيور تفقد موطنها', C: 'انتقلت الطيور لأنها تحب الأماكن الجديدة', D: 'مواقف السيارات تجعل الطيور سعيدة' }, correct: 'B', explanation: 'السبب: قطع الأشجار. النتيجة: فقدان الطيور لموطنها.' },
+        20: { kategori: 'numerasi', level: 'mudah', text: 'توربين رياح واحد ينتج 30 كيلوواط ساعة من الكهرباء يومياً. إذا كان منزل واحد يحتاج 3 كيلوواط ساعة يومياً، فكم منزلاً يمكن خدمته؟', answers: { A: '5 منازل', B: '8 منازل', C: '10 منازل', D: '15 منزلاً' }, correct: 'C', explanation: '30 كيلوواط ساعة ÷ 3 كيلوواط ساعة لكل منزل = 10 منازل.' },
+        21: { kategori: 'bernalar', level: 'sedang', text: 'تفكر مدرسة في استبدال حافلتها التي تعمل بالبنزين بسيارة كهربائية.\n\nما هو الاعتبار الأنسب قبل اتخاذ القرار؟', answers: { A: 'السيارات الكهربائية أغلى، لذا لا حاجة', B: 'مقارنة التكلفة والتأثير البيئي وتوفر البنية التحتية', C: 'سيارات البنزين أسرع، لذا اختر البنزين', D: 'تقليد المدارس الأخرى' }, correct: 'B', explanation: 'القرار الجيد يأخذ في الاعتبار عدة جوانب.' },
+        22: { kategori: 'literasi', level: 'sulit', text: 'اقرأ الفقرة التالية:\n"البصمة الكربونية هي إجمالي غازات الدفيئة الناتجة عن الأنشطة البشرية، سواء بشكل مباشر أو غير مباشر. كلما زادت البصمة الكربونية لشخص، زادت مساهمته في الاحتباس الحراري."\n\nما هي البصمة الكربونية؟', answers: { A: 'آثار الأحذية على الأرض', B: 'إجمالي غازات الدفيئة من الأنشطة البشرية', C: 'آثار أقدام الحيوانات', D: 'اسم ماركة أحذية' }, correct: 'B', explanation: 'البصمة الكربونية = إجمالي غازات الدفيئة من الأنشطة البشرية.' },
+        23: { kategori: 'bernalar', level: 'sulit', text: 'تريد مدرسة بناء مبنى جديد. هناك خياران:\n(أ) قطع 50 شجرة في الساحة\n(ب) استخدام موقف السيارات القديم الفارغ\n\nأي خيار يتماشى مع مبادئ التنمية المستدامة؟', answers: { A: 'الخيار أ لأنه أسرع', B: 'الخيار ب لأنه يحافظ على الأشجار ويستخدم الأرض الموجودة', C: 'الخيار أ لأن الأشجار يمكن إعادة زراعتها', D: 'كلاهما نفس الشيء' }, correct: 'B', explanation: 'التنمية المستدامة تعني تلبية الاحتياجات دون التضحية بالبيئة.' }
+    }
+};
+
+// ============================================================
+// STATE
+// ============================================================
+const MAX_POSITION = 23;
+const PLAYER_COLORS = ['#e74c3c', '#3498db', '#f1c40f', '#2ecc71'];
+const PLAYER_EMOJIS = ['🦸‍♂️', '🦸‍♀️', '🧑‍🚀', '🧚'];
+const STACK_OFFSETS = [
+    { dx: -6, dy: -6 }, { dx: 6, dy: -6 },
+    { dx: -6, dy: 6 },  { dx: 6, dy: 6 }
+];
+
+const diceRotations = {
+    1: { x: 0,   y: 0   }, 2: { x: 90,  y: 0   },
+    3: { x: 0,   y: -90 }, 4: { x: 0,   y: 90  },
+    5: { x: -90, y: 0   }, 6: { x: 0,   y: 180 }
+};
+
+let currentLang = 'id';
+let players = [];
+let currentPlayerIndex = 0;
+let isRolling = false;
+let gameActive = false;
+
+// DOM refs
+const diceEl = document.getElementById('dice');
+const rollBtn = document.getElementById('rollBtn');
+const startBtn = document.getElementById('startBtn');
+const playerCountSelect = document.getElementById('playerCount');
+const turnIndicator = document.getElementById('turnIndicator');
+const diceResultEl = document.getElementById('diceResult');
+const scoreboard = document.getElementById('scoreboard');
+const notification = document.getElementById('notification');
+const winModal = document.getElementById('winModal');
+const winnerText = document.getElementById('winnerText');
+const resetBtn = document.getElementById('resetBtn');
+const confirmResetModal = document.getElementById('confirmResetModal');
+const questionModal = document.getElementById('questionModal');
+const questionCategory = document.getElementById('questionCategory');
+const questionLevel = document.getElementById('questionLevel');
+const questionPlayer = document.getElementById('questionPlayer');
+const questionPos = document.getElementById('questionPos');
+const questionText = document.getElementById('questionText');
+const answersContainer = document.getElementById('answersContainer');
+const questionFeedback = document.getElementById('questionFeedback');
+const questionExplanation = document.getElementById('questionExplanation');
+
+// ============================================================
+// HELPERS
+// ============================================================
+function t(key, vars = {}) {
+    let text = TRANSLATIONS[currentLang][key] || key;
+    for (const [k, v] of Object.entries(vars)) {
+        text = text.replace(new RegExp(`\\{${k}\\}`, 'g'), v);
+    }
+    return text;
+}
+
+function getQuestions() {
+    return QUESTIONS_ALL[currentLang] || QUESTIONS_ALL.id;
+}
+
+function showNotification(msg, duration = 2000) {
+    notification.innerText = msg;
+    notification.classList.add('show');
+    setTimeout(() => notification.classList.remove('show'), duration);
+}
+
+function getCellByPosition(pos) {
+    return document.querySelector(`.cell[data-pos="${pos}"]`);
+}
+
+// ============================================================
+// LANGUAGE SWITCHING
+// ============================================================
+function changeLanguage(lang) {
+    currentLang = lang;
+    document.documentElement.lang = lang;
+    document.documentElement.dir = (lang === 'ar') ? 'rtl' : 'ltr';
+
+    // Update static UI
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+        const key = el.getAttribute('data-i18n');
+        if (TRANSLATIONS[lang][key]) {
+            el.textContent = TRANSLATIONS[lang][key];
+        }
+    });
+
+    // Update title and tagline
+    const tagline = document.querySelector('.tagline');
+    if (tagline && TRANSLATIONS[lang].tagline) tagline.textContent = TRANSLATIONS[lang].tagline;
+
+    // Update player count options
+    const opts = playerCountSelect.options;
+    for (let i = 0; i < opts.length; i++) {
+        const key = 'player' + (i + 1);
+        if (TRANSLATIONS[lang][key]) opts[i].textContent = TRANSLATIONS[lang][key];
+    }
+
+    // Update START cell label (has data-i18n="mulai" and "start" both)
+    // (already handled by data-i18n above)
+
+    // Update scoreboard title
+    const sbTitle = scoreboard.querySelector('h3');
+    if (sbTitle) sbTitle.textContent = TRANSLATIONS[lang].scoreboardTitle;
+
+    // Update current status texts if game not active
+    if (!gameActive) {
+        turnIndicator.textContent = TRANSLATIONS[lang].waitingStart;
+        diceResultEl.textContent = TRANSLATIONS[lang].diceResultDefault;
+    } else {
+        updateTurnUI();
+        updateScoreboard();
+    }
+
+    // Update player names if game active
+    if (players.length > 0) {
+        players.forEach((p, i) => { p.name = `${TRANSLATIONS[lang].playerName} ${i + 1}`; });
+        updateTurnUI();
+        updateScoreboard();
+    }
+
+    // Update dice result label
+    if (diceResultEl.textContent.startsWith(TRANSLATIONS[lang].diceResultLabel) === false) {
+        // keep as is or update
+    }
+
+    // Update modal texts
+    const winTitleEl = winModal.querySelector('h2');
+    if (winTitleEl) winTitleEl.textContent = TRANSLATIONS[lang].winTitle;
+    const playAgainBtn = winModal.querySelector('button');
+    if (playAgainBtn) playAgainBtn.textContent = TRANSLATIONS[lang].playAgain;
+
+    const resetTitleEl = confirmResetModal.querySelector('h2');
+    if (resetTitleEl) resetTitleEl.textContent = TRANSLATIONS[lang].resetTitle;
+    const resetDescEl = confirmResetModal.querySelector('p');
+    if (resetDescEl) resetDescEl.textContent = TRANSLATIONS[lang].resetDesc;
+    const yesResetBtn = confirmResetModal.querySelector('.btn-danger');
+    if (yesResetBtn) yesResetBtn.textContent = TRANSLATIONS[lang].yesReset;
+    const cancelBtn = confirmResetModal.querySelector('.btn-secondary');
+    if (cancelBtn) cancelBtn.textContent = TRANSLATIONS[lang].cancel;
+
+    // Update placeholder / waiting texts
+    if (turnIndicator.textContent === TRANSLATIONS['id'].waitingStart ||
+        turnIndicator.textContent.includes('Menunggu') ||
+        turnIndicator.textContent.includes('Waiting') ||
+        turnIndicator.textContent.includes('等待') ||
+        turnIndicator.textContent.includes('대기') ||
+        turnIndicator.textContent.includes('開始待ち') ||
+        turnIndicator.textContent.includes('انتظار')) {
+        turnIndicator.textContent = TRANSLATIONS[lang].waitingStart;
+    }
+
+    showNotification(`🌐 ${TRANSLATIONS[lang].languageLabel}: ${lang.toUpperCase()}`, 1500);
+}
+
+// ============================================================
+// GAME LOGIC
+// ============================================================
+startBtn.addEventListener('click', () => {
+    const count = parseInt(playerCountSelect.value);
+    players = [];
+    document.querySelectorAll('.token').forEach(t => t.remove());
+
+    for (let i = 0; i < count; i++) {
+        const pName = `${TRANSLATIONS[currentLang].playerName} ${i + 1}`;
+        players.push({
+            id: i, name: pName, pos: 0, score: 0,
+            color: PLAYER_COLORS[i], emoji: PLAYER_EMOJIS[i]
+        });
+
+        const token = document.createElement('div');
+        token.className = 'token';
+        token.id = `token-${i}`;
+        token.style.backgroundColor = PLAYER_COLORS[i];
+        token.innerText = PLAYER_EMOJIS[i];
+        token.title = pName;
+
+        getCellByPosition(0).appendChild(token);
+        const offset = STACK_OFFSETS[i];
+        token.style.transform = `translate(calc(-50% + ${offset.dx}px), calc(-50% + ${offset.dy}px))`;
+    }
+
+    gameActive = true;
+    currentPlayerIndex = 0;
+    updateTurnUI();
+    updateScoreboard();
+    rollBtn.disabled = false;
+    startBtn.disabled = true;
+    playerCountSelect.disabled = true;
+    diceResultEl.innerText = `${TRANSLATIONS[currentLang].diceResultLabel} -`;
+    resetBtn.classList.add('show');
+    showNotification(t('notifGameStart', { n: count }));
+});
+
+rollBtn.addEventListener('click', () => {
+    if (!gameActive || isRolling) return;
+    isRolling = true;
+    rollBtn.disabled = true;
+
+    const result = Math.floor(Math.random() * 6) + 1;
+    const targetRot = diceRotations[result];
+    const extraSpins = 360 * 3;
+
+    diceEl.style.transform = `rotateX(${targetRot.x + extraSpins}deg) rotateY(${targetRot.y + extraSpins}deg)`;
+    diceResultEl.innerText = `${TRANSLATIONS[currentLang].diceResultLabel} ...`;
+
+    setTimeout(() => {
+        diceResultEl.innerText = `${TRANSLATIONS[currentLang].diceResultLabel} ${result}`;
+        showNotification(t('notifDiceRoll', { name: players[currentPlayerIndex].name, n: result }), 1500);
+        movePlayer(currentPlayerIndex, result);
+    }, 1600);
+});
+
+function movePlayer(playerIndex, steps) {
+    document.querySelectorAll('.token').forEach(t => t.classList.remove('active'));
+    const tokenEl = document.getElementById(`token-${playerIndex}`);
+    if (tokenEl) tokenEl.classList.add('active');
+
+    let currentPos = players[playerIndex].pos;
+    let targetPos = currentPos + steps;
+    if (targetPos > MAX_POSITION) {
+        targetPos = MAX_POSITION;
+        showNotification(t('notifCantPass', { name: players[playerIndex].name }), 1500);
+    }
+
+    const interval = setInterval(() => {
+        if (currentPos < targetPos) {
+            currentPos++;
+            players[playerIndex].pos = currentPos;
+            updateTokenPosition(playerIndex);
+        } else {
+            clearInterval(interval);
+            setTimeout(() => {
+                if (tokenEl) tokenEl.classList.remove('active');
+                if (currentPos >= 1 && currentPos <= 23 && getQuestions()[currentPos]) {
+                    showQuestion(playerIndex, currentPos);
+                } else {
+                    nextTurn();
+                }
+            }, 400);
+        }
+    }, 400);
+}
+
+function updateTokenPosition(playerIndex) {
+    const tokenEl = document.getElementById(`token-${playerIndex}`);
+    if (!tokenEl) return;
+    const pos = players[playerIndex].pos;
+    const targetCell = getCellByPosition(pos);
+    if (!targetCell) return;
+    targetCell.appendChild(tokenEl);
+    const sameBox = players.filter(p => p.pos === pos);
+    const stackIndex = sameBox.findIndex(p => p.id === playerIndex);
+    const offset = STACK_OFFSETS[stackIndex] || { dx: 0, dy: 0 };
+    tokenEl.style.transform = `translate(calc(-50% + ${offset.dx}px), calc(-50% + ${offset.dy}px))`;
+}
+
+function showQuestion(playerIndex, posisi) {
+    const q = getQuestions()[posisi];
+    if (!q) { nextTurn(); return; }
+
+    const langT = TRANSLATIONS[currentLang];
+
+    questionCategory.className = 'question-category ' + q.kategori;
+    questionCategory.innerText = langT.categoryLabel[q.kategori] || q.kategori;
+
+    questionLevel.className = 'question-level ' + q.level;
+    questionLevel.innerText = langT.levelLabel[q.level] || q.level;
+
+    questionPlayer.innerText = t('questionPlayerLabel', { name: players[playerIndex].name });
+    const katLabel = langT.categoryLabel[q.kategori] || q.kategori;
+    questionPos.innerText = t('questionPosLabel', { pos: posisi, kategori: katLabel });
+
+    questionText.innerText = q.text;
+    questionText.style.whiteSpace = 'pre-line';
+    questionText.style.direction = (currentLang === 'ar') ? 'rtl' : 'ltr';
+
+    answersContainer.innerHTML = '';
+    Object.keys(q.answers).forEach(key => {
+        const btn = document.createElement('button');
+        btn.className = 'answer-btn';
+        btn.dataset.answer = key;
+        btn.innerHTML = `<strong>${key}.</strong> ${q.answers[key]}`;
+        btn.addEventListener('click', () => checkAnswer(playerIndex, posisi, key, btn));
+        answersContainer.appendChild(btn);
+    });
+
+    questionFeedback.innerText = '';
+    questionFeedback.className = 'question-feedback';
+    questionExplanation.style.display = 'none';
+    questionExplanation.innerText = '';
+
+    questionModal.classList.add('show');
+}
+
+function checkAnswer(playerIndex, posisi, chosen, btnEl) {
+    const q = getQuestions()[posisi];
+    const isCorrect = chosen === q.correct;
+    const langT = TRANSLATIONS[currentLang];
+
+    document.querySelectorAll('.answer-btn').forEach(b => b.disabled = true);
+    document.querySelectorAll('.answer-btn').forEach(b => {
+        if (b.dataset.answer === q.correct) b.classList.add('correct');
+    });
+    if (!isCorrect) btnEl.classList.add('wrong');
+
+    questionExplanation.innerText = '💡 ' + q.explanation;
+    questionExplanation.style.display = 'block';
+    questionExplanation.style.direction = (currentLang === 'ar') ? 'rtl' : 'ltr';
+
+    let poin = 0;
+    if (isCorrect) {
+        if (q.level === 'mudah') poin = 10;
+        else if (q.level === 'sedang') poin = 20;
+        else if (q.level === 'sulit') poin = 30;
+
+        players[playerIndex].score += poin;
+        updateScoreboard();
+
+        questionFeedback.className = 'question-feedback correct';
+        questionFeedback.innerText = t('feedbackCorrect', { poin });
+        showNotification(t('notifCorrect', { name: players[playerIndex].name, poin }), 2000);
+    } else {
+        questionFeedback.className = 'question-feedback wrong';
+        questionFeedback.innerText = t('feedbackWrong', { key: q.correct });
+        showNotification(t('notifWrong', { name: players[playerIndex].name }), 2000);
+    }
+
+    if (posisi === MAX_POSITION) {
+        setTimeout(() => {
+            questionModal.classList.remove('show');
+            winnerText.innerText = t('winnerText', { name: players[playerIndex].name, score: players[playerIndex].score });
+            winModal.classList.add('show');
+            gameActive = false;
+            rollBtn.disabled = true;
+        }, 3000);
+    } else {
+        setTimeout(() => {
+            questionModal.classList.remove('show');
+            nextTurn();
+        }, 3000);
+    }
+}
+
+function nextTurn() {
+    isRolling = false;
+    rollBtn.disabled = false;
+    currentPlayerIndex++;
+    if (currentPlayerIndex >= players.length) currentPlayerIndex = 0;
+    updateTurnUI();
+    showNotification(t('notifTurn', { name: players[currentPlayerIndex].name }), 1500);
+}
+
+function updateTurnUI() {
+    if (!players[currentPlayerIndex]) return;
+    turnIndicator.innerText = `${TRANSLATIONS[currentLang].turnLabel} ${players[currentPlayerIndex].name}`;
+    turnIndicator.style.color = '#ffffff';
+}
+
+function updateScoreboard() {
+    scoreboard.innerHTML = `<h3>${TRANSLATIONS[currentLang].scoreboardTitle}</h3>`;
+    players.forEach(p => {
+        scoreboard.innerHTML += `
+            <div class="player-score">
+                <span style="color:${p.color}">${p.emoji} ${p.name}</span>
+                <span style="font-weight:bold; color:#ffffff;">${p.score} pts</span>
+            </div>`;
+    });
+}
+
+resetBtn.addEventListener('click', () => confirmResetModal.classList.add('show'));
+function closeResetModal() { confirmResetModal.classList.remove('show'); }
+function confirmReset() {
+    confirmResetModal.classList.remove('show');
+    players = [];
+    currentPlayerIndex = 0;
+    isRolling = false;
+    gameActive = false;
+    document.querySelectorAll('.token').forEach(t => t.remove());
+    scoreboard.innerHTML = `<h3>${TRANSLATIONS[currentLang].scoreboardTitle}</h3>`;
+    turnIndicator.innerText = TRANSLATIONS[currentLang].waitingStart;
+    turnIndicator.style.color = '#ffffff';
+    diceResultEl.innerText = `${TRANSLATIONS[currentLang].diceResultLabel} -`;
+    diceEl.style.transform = 'rotateX(0deg) rotateY(0deg)';
+    rollBtn.disabled = true;
+    startBtn.disabled = false;
+    playerCountSelect.disabled = false;
+    resetBtn.classList.remove('show');
+    winModal.classList.remove('show');
+    questionModal.classList.remove('show');
+    showNotification(TRANSLATIONS[currentLang].notifReset);
+}
+
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && questionModal.classList.contains('show')) return;
+    if ((e.key === ' ' || e.key === 'Enter') && !rollBtn.disabled && !questionModal.classList.contains('show')) {
+        e.preventDefault();
+        rollBtn.click();
+    }
+});
+</script>
+</body>
+</html>
