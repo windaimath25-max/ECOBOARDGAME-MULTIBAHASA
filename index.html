@@ -418,6 +418,28 @@
     }
     .language-selector select:hover { border-color: #ffb347; }
 
+    /* ============================================================
+       TOMBOL SUARA ON/OFF — POJOK KANAN ATAS
+       ============================================================ */
+    .sound-toggle {
+        position: fixed; top: 15px; right: 210px; z-index: 3100;
+        width: 48px; height: 48px; border-radius: 50%;
+        background: linear-gradient(145deg, #2ecc71, #27ae60);
+        border: 3px solid rgba(255,255,255,0.9);
+        color: #ffffff; font-size: 22px; cursor: pointer;
+        display: flex; align-items: center; justify-content: center;
+        box-shadow: 0 5px #145a32, 0 8px 20px rgba(0,0,0,0.5), inset 0 2px 4px rgba(255,255,255,0.3);
+        transition: all 0.2s ease;
+        user-select: none;
+    }
+    .sound-toggle:hover { transform: scale(1.1); }
+    .sound-toggle:active { transform: scale(0.95) translateY(3px); box-shadow: 0 2px #145a32; }
+    .sound-toggle.muted {
+        background: linear-gradient(145deg, #e74c3c, #c0392b);
+        box-shadow: 0 5px #7b241c, 0 8px 20px rgba(0,0,0,0.5), inset 0 2px 4px rgba(255,255,255,0.3);
+    }
+    .sound-toggle.muted:active { box-shadow: 0 2px #7b241c; }
+
     @media (max-width: 1024px) {
         .cell-icon { font-size: 24px; }
         .cell-label { font-size: 7px; padding: 1px 3px; }
@@ -450,10 +472,14 @@
         .language-selector { top: 8px; right: 8px; padding: 4px 6px; }
         .language-selector label { font-size: 11px; }
         .language-selector select { font-size: 11px; padding: 4px 6px; }
+        .sound-toggle { top: 8px; right: 175px; width: 40px; height: 40px; font-size: 18px; }
     }
 </style>
 </head>
 <body>
+
+<!-- TOMBOL SUARA ON/OFF -->
+<button id="soundToggle" class="sound-toggle" title="Suara ON/OFF">🔊</button>
 
 <!-- LANGUAGE SELECTOR -->
 <div class="language-selector">
@@ -596,6 +622,162 @@
 </div>
 
 <script>
+// ============================================================
+// 🎵 SOUND ENGINE (Web Audio API — tidak butuh file MP3)
+// ============================================================
+const SoundEngine = (() => {
+    let ctx = null;
+    let enabled = true;
+
+    function init() {
+        if (!ctx) {
+            try {
+                ctx = new (window.AudioContext || window.webkitAudioContext)();
+            } catch (e) {
+                console.warn('Web Audio API tidak didukung browser ini.');
+            }
+        }
+        if (ctx && ctx.state === 'suspended') {
+            ctx.resume();
+        }
+    }
+
+    function play(freq, duration, type = 'sine', volume = 0.15, delay = 0, freqEnd = null) {
+        if (!enabled) return;
+        init();
+        if (!ctx) return;
+
+        const t0 = ctx.currentTime + delay;
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, t0);
+        if (freqEnd !== null) {
+            osc.frequency.exponentialRampToValueAtTime(Math.max(freqEnd, 0.001), t0 + duration);
+        }
+
+        gain.gain.setValueAtTime(0, t0);
+        gain.gain.linearRampToValueAtTime(volume, t0 + 0.01);
+        gain.gain.exponentialRampToValueAtTime(0.0001, t0 + duration);
+
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+
+        osc.start(t0);
+        osc.stop(t0 + duration + 0.05);
+    }
+
+    function noise(duration, volume = 0.1, delay = 0, filterFreq = 2000) {
+        if (!enabled) return;
+        init();
+        if (!ctx) return;
+
+        const t0 = ctx.currentTime + delay;
+        const bufferSize = ctx.sampleRate * duration;
+        const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+        const data = buffer.getChannelData(0);
+        for (let i = 0; i < bufferSize; i++) {
+            data[i] = Math.random() * 2 - 1;
+        }
+        const noiseSource = ctx.createBufferSource();
+        noiseSource.buffer = buffer;
+
+        const filter = ctx.createBiquadFilter();
+        filter.type = 'bandpass';
+        filter.frequency.value = filterFreq;
+        filter.Q.value = 1;
+
+        const gain = ctx.createGain();
+        gain.gain.setValueAtTime(volume, t0);
+        gain.gain.exponentialRampToValueAtTime(0.0001, t0 + duration);
+
+        noiseSource.connect(filter);
+        filter.connect(gain);
+        gain.connect(ctx.destination);
+
+        noiseSource.start(t0);
+        noiseSource.stop(t0 + duration);
+    }
+
+    return {
+        setEnabled(v) { enabled = v; if (v) init(); },
+        isEnabled() { return enabled; },
+        init,
+        click() {
+            play(900, 0.06, 'square', 0.10);
+            play(1300, 0.05, 'square', 0.06, 0.03);
+        },
+        diceRoll() {
+            // Suara dadu berputar — beberapa bunyi "tok" cepat
+            for (let i = 0; i < 8; i++) {
+                noise(0.08, 0.09, i * 0.13, 1200 + Math.random() * 1500);
+                play(180 + Math.random() * 120, 0.05, 'triangle', 0.06, i * 0.13);
+            }
+        },
+        diceResult() {
+            // Suara saat dadu berhenti
+            play(600, 0.15, 'triangle', 0.18);
+            play(900, 0.20, 'triangle', 0.15, 0.08);
+            play(1200, 0.25, 'triangle', 0.12, 0.16);
+        },
+        step() {
+            // Suara langkah token di papan
+            play(500, 0.05, 'square', 0.10);
+            play(700, 0.04, 'square', 0.08, 0.02);
+        },
+        correct() {
+            play(660, 0.15, 'sine', 0.18);
+            play(880, 0.15, 'sine', 0.18, 0.12);
+            play(1320, 0.30, 'sine', 0.20, 0.24);
+        },
+        wrong() {
+            play(300, 0.20, 'sawtooth', 0.15);
+            play(200, 0.30, 'sawtooth', 0.13, 0.15);
+        },
+        win() {
+            const notes = [523, 659, 784, 1047, 1319, 1568];
+            notes.forEach((f, i) => {
+                play(f, 0.25, 'triangle', 0.18, i * 0.13);
+                play(f * 2, 0.15, 'sine', 0.08, i * 0.13);
+            });
+        },
+        language() {
+            play(800, 0.08, 'sine', 0.12);
+            play(1100, 0.10, 'sine', 0.10, 0.06);
+        },
+        toggle() {
+            play(1000, 0.06, 'sine', 0.12);
+            play(1400, 0.08, 'sine', 0.10, 0.05);
+        }
+    };
+})();
+
+// ============================================================
+// TOMBOL SUARA ON/OFF
+// ============================================================
+const soundToggleBtn = document.getElementById('soundToggle');
+let soundEnabled = true;
+
+soundToggleBtn.addEventListener('click', () => {
+    soundEnabled = !soundEnabled;
+    SoundEngine.setEnabled(soundEnabled);
+    if (soundEnabled) {
+        soundToggleBtn.innerText = '🔊';
+        soundToggleBtn.classList.remove('muted');
+        soundToggleBtn.title = 'Suara ON (klik untuk matikan)';
+        SoundEngine.toggle();
+    } else {
+        soundToggleBtn.innerText = '🔇';
+        soundToggleBtn.classList.add('muted');
+        soundToggleBtn.title = 'Suara OFF (klik untuk hidupkan)';
+    }
+});
+
+// Inisialisasi audio saat interaksi pertama (browser butuh gesture user)
+document.addEventListener('click', () => SoundEngine.init(), { once: true });
+document.addEventListener('touchstart', () => SoundEngine.init(), { once: true });
+
 // ============================================================
 // TRANSLATIONS
 // ============================================================
@@ -1084,9 +1266,6 @@ function changeLanguage(lang) {
         if (TRANSLATIONS[lang][key]) opts[i].textContent = TRANSLATIONS[lang][key];
     }
 
-    // Update START cell label (has data-i18n="mulai" and "start" both)
-    // (already handled by data-i18n above)
-
     // Update scoreboard title
     const sbTitle = scoreboard.querySelector('h3');
     if (sbTitle) sbTitle.textContent = TRANSLATIONS[lang].scoreboardTitle;
@@ -1105,11 +1284,6 @@ function changeLanguage(lang) {
         players.forEach((p, i) => { p.name = `${TRANSLATIONS[lang].playerName} ${i + 1}`; });
         updateTurnUI();
         updateScoreboard();
-    }
-
-    // Update dice result label
-    if (diceResultEl.textContent.startsWith(TRANSLATIONS[lang].diceResultLabel) === false) {
-        // keep as is or update
     }
 
     // Update modal texts
@@ -1138,6 +1312,7 @@ function changeLanguage(lang) {
         turnIndicator.textContent = TRANSLATIONS[lang].waitingStart;
     }
 
+    SoundEngine.language();
     showNotification(`🌐 ${TRANSLATIONS[lang].languageLabel}: ${lang.toUpperCase()}`, 1500);
 }
 
@@ -1145,6 +1320,7 @@ function changeLanguage(lang) {
 // GAME LOGIC
 // ============================================================
 startBtn.addEventListener('click', () => {
+    SoundEngine.click();
     const count = parseInt(playerCountSelect.value);
     players = [];
     document.querySelectorAll('.token').forEach(t => t.remove());
@@ -1185,6 +1361,9 @@ rollBtn.addEventListener('click', () => {
     isRolling = true;
     rollBtn.disabled = true;
 
+    SoundEngine.click();
+    SoundEngine.diceRoll();
+
     const result = Math.floor(Math.random() * 6) + 1;
     const targetRot = diceRotations[result];
     const extraSpins = 360 * 3;
@@ -1193,6 +1372,7 @@ rollBtn.addEventListener('click', () => {
     diceResultEl.innerText = `${TRANSLATIONS[currentLang].diceResultLabel} ...`;
 
     setTimeout(() => {
+        SoundEngine.diceResult();
         diceResultEl.innerText = `${TRANSLATIONS[currentLang].diceResultLabel} ${result}`;
         showNotification(t('notifDiceRoll', { name: players[currentPlayerIndex].name, n: result }), 1500);
         movePlayer(currentPlayerIndex, result);
@@ -1216,6 +1396,7 @@ function movePlayer(playerIndex, steps) {
             currentPos++;
             players[playerIndex].pos = currentPos;
             updateTokenPosition(playerIndex);
+            SoundEngine.step();
         } else {
             clearInterval(interval);
             setTimeout(() => {
@@ -1282,6 +1463,7 @@ function showQuestion(playerIndex, posisi) {
 }
 
 function checkAnswer(playerIndex, posisi, chosen, btnEl) {
+    SoundEngine.click();
     const q = getQuestions()[posisi];
     const isCorrect = chosen === q.correct;
     const langT = TRANSLATIONS[currentLang];
@@ -1307,10 +1489,12 @@ function checkAnswer(playerIndex, posisi, chosen, btnEl) {
 
         questionFeedback.className = 'question-feedback correct';
         questionFeedback.innerText = t('feedbackCorrect', { poin });
+        SoundEngine.correct();
         showNotification(t('notifCorrect', { name: players[playerIndex].name, poin }), 2000);
     } else {
         questionFeedback.className = 'question-feedback wrong';
         questionFeedback.innerText = t('feedbackWrong', { key: q.correct });
+        SoundEngine.wrong();
         showNotification(t('notifWrong', { name: players[playerIndex].name }), 2000);
     }
 
@@ -1321,6 +1505,7 @@ function checkAnswer(playerIndex, posisi, chosen, btnEl) {
             winModal.classList.add('show');
             gameActive = false;
             rollBtn.disabled = true;
+            SoundEngine.win();
         }, 3000);
     } else {
         setTimeout(() => {
@@ -1356,9 +1541,16 @@ function updateScoreboard() {
     });
 }
 
-resetBtn.addEventListener('click', () => confirmResetModal.classList.add('show'));
-function closeResetModal() { confirmResetModal.classList.remove('show'); }
+resetBtn.addEventListener('click', () => {
+    SoundEngine.click();
+    confirmResetModal.classList.add('show');
+});
+function closeResetModal() {
+    SoundEngine.click();
+    confirmResetModal.classList.remove('show');
+}
 function confirmReset() {
+    SoundEngine.click();
     confirmResetModal.classList.remove('show');
     players = [];
     currentPlayerIndex = 0;
